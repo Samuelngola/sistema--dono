@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Análise · Sistema do Dono</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0a;--bg2:#111;--bg3:#161616;--bg4:#1c1c1c;
+  --bdr:#222;--bdr2:#2a2a2a;
+  --txt:#f0f0f0;--txt2:#aaa;--txt3:#555;
+  --gold:#d4a843;--gold2:#f5c842;
+  --g:#16a34a;--g2:#22c55e;
+  --r:#dc2626;--r2:#ef4444;
+  --y:#ca8a04;--y2:#eab308;
+  --b:#2563eb;--b2:#3b82f6;
+  --pu:#7c3aed;--pu2:#a78bfa;
+  --card-r:6px;
+  --mono:'Fira Code',monospace;
+  --serif:'DM Serif Display',serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mono);}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:52px;
+  background:rgba(10,10,10,.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;z-index:300;
+}
+.tb-logo{font-family:var(--serif);font-size:17px;color:var(--gold);letter-spacing:.5px;}
+.tb-logo span{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--txt3);display:block;font-family:var(--mono);margin-top:-2px;}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.tb-badge{font-size:7px;letter-spacing:2px;text-transform:uppercase;background:var(--bg3);border:1px solid var(--bdr2);color:var(--txt2);padding:4px 10px;}
+
+/* ── LAYOUT ── */
+.shell{display:flex;height:100vh;padding-top:52px;}
+
+/* ── SIDEBAR desktop ── */
+.sidebar{
+  width:200px;min-width:200px;
+  background:var(--bg2);border-right:1px solid var(--bdr);
+  padding:20px 0;overflow-y:auto;
+  position:sticky;top:52px;height:calc(100vh - 52px);
+}
+.sb-section{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--txt3);padding:16px 18px 6px;}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 18px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--txt2);cursor:pointer;border-left:2px solid transparent;
+  transition:all .15s;background:none;border-right:none;border-top:none;border-bottom:none;width:100%;text-align:left;
+}
+.sb-item:hover{color:var(--txt);background:rgba(255,255,255,.03);}
+.sb-item.active{color:var(--gold);border-left-color:var(--gold);background:rgba(212,168,67,.05);}
+.sb-icon{font-size:14px;width:18px;text-align:center;}
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;}
+.page{display:none;padding:20px 24px;padding-bottom:30px;max-width:1100px;}
+.page.active{display:block;}
+
+/* ── PAGE HEADER ── */
+.ph{margin-bottom:24px;}
+.ph-title{font-family:var(--serif);font-size:32px;color:var(--txt);line-height:1.1;}
+.ph-title em{color:var(--gold);font-style:italic;}
+.ph-sub{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-top:4px;}
+
+/* ── CARDS GRID ── */
+.cards{display:grid;gap:12px;}
+.cards-4{grid-template-columns:repeat(4,1fr);}
+.cards-3{grid-template-columns:repeat(3,1fr);}
+.cards-2{grid-template-columns:repeat(2,1fr);}
+
+.kcard{
+  background:var(--bg2);border:1px solid var(--bdr);
+  padding:16px;
+}
+.kcard-label{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px;}
+.kcard-val{font-size:24px;font-weight:600;line-height:1;}
+.kcard-sub{font-size:9px;color:var(--txt3);margin-top:4px;}
+.kcard-delta{font-size:10px;margin-top:6px;padding:2px 6px;display:inline-block;}
+.delta-up{background:rgba(22,163,74,.15);color:var(--g2);}
+.delta-dn{background:rgba(220,38,38,.15);color:var(--r2);}
+.delta-eq{background:rgba(255,255,255,.05);color:var(--txt2);}
+
+/* ── SECTION ── */
+.sec{margin-bottom:28px;}
+.sec-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;border-bottom:1px solid var(--bdr);padding-bottom:8px;
+}
+.sec-title{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--txt2);}
+.sec-action{font-size:8px;letter-spacing:1px;color:var(--gold);cursor:pointer;text-transform:uppercase;background:none;border:none;}
+
+/* ── INPUT ROW ── */
+.inp-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;}
+.inp-group{display:flex;flex-direction:column;gap:3px;}
+.inp-label{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);}
+.inp{
+  background:var(--bg3);border:1px solid var(--bdr);border-bottom:2px solid var(--gold);
+  color:var(--txt);font-family:var(--mono);font-size:14px;padding:7px 10px;
+  outline:none;transition:border-color .2s;
+}
+.inp:focus{border-bottom-color:var(--gold2);}
+.inp-sm{width:120px;}
+.inp-md{width:160px;}
+.inp-lg{width:200px;}
+.inp-sel{
+  background:var(--bg3);border:1px solid var(--bdr);border-bottom:2px solid var(--bdr2);
+  color:var(--txt2);font-family:var(--mono);font-size:10px;padding:7px 10px;
+  outline:none;cursor:pointer;
+}
+.btn{
+  background:var(--gold);color:#000;font-family:var(--mono);font-size:9px;
+  letter-spacing:2px;text-transform:uppercase;padding:9px 16px;
+  border:none;cursor:pointer;transition:background .15s;font-weight:600;
+}
+.btn:hover{background:var(--gold2);}
+.btn-ghost{background:transparent;border:1px solid var(--bdr2);color:var(--txt2);}
+.btn-ghost:hover{background:var(--bg3);color:var(--txt);}
+.btn-r{background:var(--r);color:#fff;}
+.btn-r:hover{background:var(--r2);}
+
+/* ── CHART CONTAINERS ── */
+.chart-wrap{
+  background:var(--bg2);border:1px solid var(--bdr);
+  padding:16px;position:relative;overflow:hidden;
+}
+.chart-title{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:12px;}
+canvas{display:block;width:100%;}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);padding:6px 10px;text-align:left;border-bottom:1px solid var(--bdr);}
+td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--txt2);}
+tr:hover td{background:rgba(255,255,255,.02);}
+td.highlight{color:var(--txt);font-weight:600;}
+td.up{color:var(--g2);}td.dn{color:var(--r2);}td.neutral{color:var(--txt3);}
+
+/* ── BADGE ── */
+.badge{font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;display:inline-block;}
+.badge-g{background:rgba(22,163,74,.15);color:var(--g2);}
+.badge-r{background:rgba(220,38,38,.15);color:var(--r2);}
+.badge-y{background:rgba(202,138,4,.15);color:var(--y2);}
+.badge-b{background:rgba(37,99,235,.15);color:var(--b2);}
+.badge-pu{background:rgba(124,58,237,.15);color:var(--pu2);}
+
+/* ── PATRIMONIO CARDS ── */
+.pat-card{
+  background:var(--bg2);border:1px solid var(--bdr);
+  padding:16px;display:flex;flex-direction:column;gap:8px;
+}
+.pat-card-top{display:flex;align-items:flex-start;justify-content:space-between;}
+.pat-name{font-size:11px;letter-spacing:1px;color:var(--txt);}
+.pat-cat{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);}
+.pat-val{font-size:22px;font-weight:700;color:var(--gold);}
+.pat-sub{font-size:9px;color:var(--txt3);}
+.pat-actions{display:flex;gap:6px;margin-top:4px;}
+.pat-btn{font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;background:var(--bg3);border:1px solid var(--bdr2);color:var(--txt3);cursor:pointer;}
+.pat-btn:hover{color:var(--txt);}
+
+/* ── INSIGHT BOX ── */
+.insight{
+  background:var(--bg3);border-left:3px solid var(--gold);
+  padding:12px 16px;margin-bottom:10px;
+}
+.insight-head{font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+.insight-body{font-size:11px;color:var(--txt2);line-height:1.6;}
+
+/* ── HEAT MAP ── */
+.heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px;}
+.hm-cell{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  font-size:8px;color:var(--txt3);cursor:pointer;transition:transform .1s;
+}
+.hm-cell:hover{transform:scale(1.15);}
+.hm-0{background:var(--bg3);}
+.hm-1{background:rgba(22,163,74,.2);}
+.hm-2{background:rgba(22,163,74,.4);}
+.hm-3{background:rgba(22,163,74,.65);}
+.hm-4{background:rgba(34,197,94,.9);}
+.hm-label{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt3);text-align:center;padding:2px;}
+
+/* ── PERIOD TABS ── */
+.period-tabs{display:flex;gap:0;margin-bottom:16px;border:1px solid var(--bdr);}
+.pt{
+  flex:1;padding:8px;text-align:center;font-size:8px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--txt3);cursor:pointer;background:none;border:none;border-right:1px solid var(--bdr);
+  transition:all .15s;
+}
+.pt:last-child{border-right:none;}
+.pt.active{background:var(--gold);color:#000;font-weight:700;}
+.pt:hover:not(.active){background:var(--bg3);color:var(--txt2);}
+
+/* ── COMPARISON STRIP ── */
+.comp-strip{
+  display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:center;gap:16px;
+  background:var(--bg2);border:1px solid var(--bdr);padding:16px;margin-bottom:16px;
+}
+.comp-side{text-align:center;}
+.comp-label{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:4px;}
+.comp-val{font-size:28px;font-weight:700;}
+.comp-sub{font-size:9px;color:var(--txt3);margin-top:2px;}
+.comp-vs{font-family:var(--serif);font-size:20px;color:var(--txt3);font-style:italic;}
+.comp-arrow{font-size:32px;text-align:center;}
+
+/* ── BOTTOM NAV mobile ── */
+.bottom-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);border-top:1px solid var(--bdr);z-index:400;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.bn-scroll{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.bn-scroll::-webkit-scrollbar{display:none;}
+.bn-item{
+  display:flex;flex-direction:column;align-items:center;
+  padding:8px 14px 6px;min-width:64px;
+  font-family:var(--mono);font-size:7px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--txt3);cursor:pointer;gap:3px;
+  background:none;border:none;border-top:2px solid transparent;
+  white-space:nowrap;transition:all .2s;
+}
+.bn-item.active{color:var(--gold);border-top-color:var(--gold);}
+.bn-icon{font-size:16px;line-height:1;}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--bdr2);padding:28px;min-width:320px;max-width:480px;width:90%;}
+.modal-title{font-family:var(--serif);font-size:22px;color:var(--gold);margin-bottom:18px;}
+.modal-fields{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+.modal-row{display:flex;gap:10px;justify-content:flex-end;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:18px;right:18px;background:var(--g);color:#fff;font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:10px 16px;opacity:0;transform:translateY(6px);transition:all .3s;pointer-events:none;z-index:999;}
+.toast.show{opacity:1;transform:translateY(0);}
+@media(max-width:800px){.toast{bottom:80px;}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:800px){
+  .sidebar{display:none;}
+  .bottom-nav{display:block;}
+  .cards-4{grid-template-columns:repeat(2,1fr);}
+  .cards-3{grid-template-columns:1fr 1fr;}
+  .page{padding:12px 10px;padding-bottom:90px;}
+  .ph-title{font-size:24px;}
+  .comp-strip{grid-template-columns:1fr auto 1fr;gap:8px;}
+  .comp-val{font-size:20px;}
+  .inp-lg,.inp-md{width:100%;}
+  .inp-row{flex-direction:column;}
+}
+@media(max-width:420px){
+  .cards-3{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-logo">Análise<span>sistema do dono</span></div>
+  <div class="tb-right">
+    <div class="tb-badge" id="tb-total-pat">Património: —</div>
+  </div>
+</div>
+
+<div class="shell">
+
+<!-- SIDEBAR desktop -->
+<nav class="sidebar">
+  <div class="sb-section">Desempenho</div>
+  <button class="sb-item active" onclick="nav('diario',this)"><span class="sb-icon">📅</span>Diário</button>
+  <button class="sb-item" onclick="nav('semanal',this)"><span class="sb-icon">📊</span>Semanal</button>
+  <button class="sb-item" onclick="nav('mensal',this)"><span class="sb-icon">🗓️</span>Mensal</button>
+  <button class="sb-item" onclick="nav('anual',this)"><span class="sb-icon">📈</span>Anual</button>
+  <div class="sb-section">Análise</div>
+  <button class="sb-item" onclick="nav('padroes',this)"><span class="sb-icon">🔍</span>Padrões</button>
+  <button class="sb-item" onclick="nav('comparar',this)"><span class="sb-icon">⚖️</span>Comparar</button>
+  <div class="sb-section">Negócio</div>
+  <button class="sb-item" onclick="nav('patrimonio',this)"><span class="sb-icon">💎</span>Património</button>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ══════════ DIÁRIO ══════════ -->
+<section class="page active" id="diario">
+  <div class="ph">
+    <div class="ph-title">Registo <em>Diário</em></div>
+    <div class="ph-sub">Segundo a segundo — o pulso do negócio</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Registar dia</div></div>
+    <div class="inp-row">
+      <div class="inp-group">
+        <div class="inp-label">Data</div>
+        <input type="date" id="d-data" class="inp inp-md">
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">Dia da semana</div>
+        <input type="text" id="d-dia" class="inp inp-md" readonly placeholder="Auto" style="color:var(--txt3);">
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">Grades vendidas</div>
+        <input type="number" id="d-grades" class="inp inp-sm" placeholder="0" min="0">
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">Receita (Kz)</div>
+        <input type="number" id="d-receita" class="inp inp-md" placeholder="0">
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">Custo (Kz)</div>
+        <input type="number" id="d-custo" class="inp inp-md" placeholder="0">
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">Nota</div>
+        <input type="text" id="d-nota" class="inp inp-lg" placeholder="Ex: feriado, entrega especial…">
+      </div>
+      <div class="inp-group" style="justify-content:flex-end;">
+        <div class="inp-label">&nbsp;</div>
+        <button class="btn" onclick="addDia()">+ Registar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs resumo semana actual -->
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Semana actual vs semana anterior</div></div>
+    <div class="cards cards-4" id="d-kpis">
+      <div class="kcard"><div class="kcard-label">Grades hoje</div><div class="kcard-val" id="d-k-hoje">—</div><div class="kcard-delta delta-eq" id="d-k-hoje-d">vs ontem</div></div>
+      <div class="kcard"><div class="kcard-label">Receita hoje</div><div class="kcard-val" id="d-k-rec">—</div><div class="kcard-delta delta-eq" id="d-k-rec-d">vs ontem</div></div>
+      <div class="kcard"><div class="kcard-label">Margem hoje</div><div class="kcard-val" id="d-k-mg">—</div><div class="kcard-delta delta-eq" id="d-k-mg-d">vs ontem</div></div>
+      <div class="kcard"><div class="kcard-label">Melhor dia</div><div class="kcard-val" id="d-k-best">—</div><div class="kcard-sub" id="d-k-best-d">da semana</div></div>
+    </div>
+  </div>
+
+  <!-- Comparação dia a dia: esta semana vs semana passada -->
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Comparação dia a dia</div></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Dia</th>
+          <th>Semana actual</th>
+          <th>Semana anterior</th>
+          <th>Δ Grades</th>
+          <th>Δ Receita</th>
+          <th>Tendência</th>
+        </tr></thead>
+        <tbody id="d-compare-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Gráfico barras semana -->
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Grades por dia — últimas 2 semanas</div></div>
+    <div class="chart-wrap">
+      <canvas id="chart-dias" height="160"></canvas>
+    </div>
+  </div>
+
+  <!-- Log dias -->
+  <div class="sec">
+    <div class="sec-head">
+      <div class="sec-title">Histórico diário</div>
+      <select class="inp-sel" id="d-filtro-sem" onchange="renderDiario()">
+        <option value="all">Todas as semanas</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Data</th><th>Dia</th><th>Grades</th><th>Receita</th><th>Custo</th><th>Margem</th><th>Semana</th><th>Nota</th><th></th></tr></thead>
+        <tbody id="d-log"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ SEMANAL ══════════ -->
+<section class="page" id="semanal">
+  <div class="ph">
+    <div class="ph-title">Desempenho <em>Semanal</em></div>
+    <div class="ph-sub">Semana a semana — padrão de crescimento</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Resumo por semana</div></div>
+    <div class="cards cards-4" id="s-kpis">
+      <div class="kcard"><div class="kcard-label">Melhor semana</div><div class="kcard-val" id="s-best">—</div><div class="kcard-sub" id="s-best-d">grades</div></div>
+      <div class="kcard"><div class="kcard-label">Pior semana</div><div class="kcard-val" id="s-worst">—</div><div class="kcard-sub" id="s-worst-d">grades</div></div>
+      <div class="kcard"><div class="kcard-label">Média semanal</div><div class="kcard-val" id="s-avg">—</div><div class="kcard-sub">grades/semana</div></div>
+      <div class="kcard"><div class="kcard-label">Tendência</div><div class="kcard-val" id="s-trend">—</div><div class="kcard-sub">últimas 4 sem.</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Evolução semanal — grades</div></div>
+    <div class="chart-wrap">
+      <canvas id="chart-semanas" height="180"></canvas>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Histórico semanal</div></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Semana</th><th>Período</th><th>Grades</th><th>Receita</th><th>Margem</th><th>vs Ant.</th><th>Status</th></tr></thead>
+        <tbody id="s-log"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ MENSAL ══════════ -->
+<section class="page" id="mensal">
+  <div class="ph">
+    <div class="ph-title">Análise <em>Mensal</em></div>
+    <div class="ph-sub">Mês a mês — onde o dinheiro fica</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Resumo mensal</div></div>
+    <div class="cards cards-4" id="m-kpis">
+      <div class="kcard"><div class="kcard-label">Melhor mês</div><div class="kcard-val" id="m-best">—</div><div class="kcard-sub" id="m-best-d">—</div></div>
+      <div class="kcard"><div class="kcard-label">Pior mês</div><div class="kcard-val" id="m-worst">—</div><div class="kcard-sub" id="m-worst-d">—</div></div>
+      <div class="kcard"><div class="kcard-label">Média mensal</div><div class="kcard-val" id="m-avg">—</div><div class="kcard-sub">grades/mês</div></div>
+      <div class="kcard"><div class="kcard-label">Mês actual</div><div class="kcard-val" id="m-cur">—</div><div class="kcard-delta delta-eq" id="m-cur-d">vs mês ant.</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Evolução mensal</div></div>
+    <div class="chart-wrap">
+      <canvas id="chart-meses" height="180"></canvas>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Histórico mensal</div></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Mês</th><th>Ano</th><th>Grades</th><th>Receita</th><th>Margem</th><th>vs Ant.</th><th>Status</th></tr></thead>
+        <tbody id="m-log"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ ANUAL ══════════ -->
+<section class="page" id="anual">
+  <div class="ph">
+    <div class="ph-title">Visão <em>Anual</em></div>
+    <div class="ph-sub">Ano a ano — o arco da empresa</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Resumo anual</div></div>
+    <div class="cards cards-3" id="a-kpis">
+      <div class="kcard"><div class="kcard-label">Total grades acum.</div><div class="kcard-val" id="a-total">—</div><div class="kcard-sub">desde o início</div></div>
+      <div class="kcard"><div class="kcard-label">Receita acumulada</div><div class="kcard-val" id="a-rec">—</div><div class="kcard-sub">Kz</div></div>
+      <div class="kcard"><div class="kcard-label">Margem acumulada</div><div class="kcard-val" id="a-mg">—</div><div class="kcard-sub">Kz</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Evolução anual</div></div>
+    <div class="chart-wrap">
+      <canvas id="chart-anos" height="180"></canvas>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Detalhes por ano</div></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Ano</th><th>Grades</th><th>Receita</th><th>Margem</th><th>Melhor mês</th><th>Pior mês</th><th>vs Ano ant.</th></tr></thead>
+        <tbody id="a-log"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PADRÕES ══════════ -->
+<section class="page" id="padroes">
+  <div class="ph">
+    <div class="ph-title"><em>Padrões</em> & Insights</div>
+    <div class="ph-sub">O que os dados te dizem — picos e vales</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Insights automáticos</div></div>
+    <div id="insights-list"></div>
+  </div>
+
+  <!-- Mapa de calor semanal -->
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Mapa de calor — dia da semana</div></div>
+    <div class="chart-wrap">
+      <div class="chart-title">Médias por dia da semana — intensidade de vendas</div>
+      <div id="heatmap-dias"></div>
+    </div>
+  </div>
+
+  <!-- Top & Bottom dias -->
+  <div class="cards cards-2" style="margin-bottom:20px;">
+    <div class="sec">
+      <div class="sec-head"><div class="sec-title">🏆 Top 5 dias</div></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>#</th><th>Data</th><th>Dia</th><th>Grades</th><th>Margem</th></tr></thead>
+        <tbody id="top5-dias"></tbody></table>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div class="sec-title">⚠ Bottom 5 dias</div></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>#</th><th>Data</th><th>Dia</th><th>Grades</th><th>Margem</th></tr></thead>
+        <tbody id="bot5-dias"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Análise por dia da semana -->
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Média por dia da semana</div></div>
+    <div class="chart-wrap">
+      <canvas id="chart-dow" height="160"></canvas>
+    </div>
+  </div>
+
+  <!-- Sazonalidade mensal -->
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Sazonalidade — média por mês do ano</div></div>
+    <div class="chart-wrap">
+      <canvas id="chart-sazon" height="160"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ COMPARAR ══════════ -->
+<section class="page" id="comparar">
+  <div class="ph">
+    <div class="ph-title"><em>Comparar</em> Períodos</div>
+    <div class="ph-sub">Coloca dois períodos frente a frente</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Seleccionar períodos</div></div>
+    <div class="period-tabs" id="comp-tabs">
+      <button class="pt active" onclick="setCompMode('semana',this)">Semana</button>
+      <button class="pt" onclick="setCompMode('mes',this)">Mês</button>
+      <button class="pt" onclick="setCompMode('ano',this)">Ano</button>
+    </div>
+    <div class="inp-row" id="comp-inputs">
+      <div class="inp-group">
+        <div class="inp-label">Período A</div>
+        <select class="inp inp-md" id="comp-a" onchange="renderCompar()"></select>
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">Período B</div>
+        <select class="inp inp-md" id="comp-b" onchange="renderCompar()"></select>
+      </div>
+    </div>
+  </div>
+
+  <div id="comp-result"></div>
+</section>
+
+<!-- ══════════ PATRIMÓNIO ══════════ -->
+<section class="page" id="patrimonio">
+  <div class="ph">
+    <div class="ph-title">Património <em>Actual</em></div>
+    <div class="ph-sub">O que tens — avaliado a preço de mercado</div>
+  </div>
+
+  <!-- Total -->
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Balanço total</div></div>
+    <div class="cards cards-3" id="pat-kpis">
+      <div class="kcard" style="border-top:3px solid var(--gold);">
+        <div class="kcard-label">Total activos</div>
+        <div class="kcard-val" id="pat-total" style="color:var(--gold);">—</div>
+        <div class="kcard-sub">Kz</div>
+      </div>
+      <div class="kcard" style="border-top:3px solid var(--r);">
+        <div class="kcard-label">Total passivos</div>
+        <div class="kcard-val" id="pat-passivos" style="color:var(--r2);">—</div>
+        <div class="kcard-sub">Kz</div>
+      </div>
+      <div class="kcard" style="border-top:3px solid var(--g);">
+        <div class="kcard-label">Património líquido</div>
+        <div class="kcard-val" id="pat-liquido" style="color:var(--g2);">—</div>
+        <div class="kcard-sub">Kz</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Adicionar activo -->
+  <div class="sec">
+    <div class="sec-head">
+      <div class="sec-title">Activos</div>
+      <button class="btn" onclick="openModalActivo()">+ Adicionar activo</button>
+    </div>
+    <div id="activos-grid" class="cards cards-3"></div>
+  </div>
+
+  <!-- Adicionar passivo -->
+  <div class="sec">
+    <div class="sec-head">
+      <div class="sec-title">Passivos / Dívidas</div>
+      <button class="btn btn-r" onclick="openModalPassivo()">+ Adicionar passivo</button>
+    </div>
+    <div id="passivos-grid" class="cards cards-3"></div>
+  </div>
+
+  <!-- Histórico de valorização -->
+  <div class="sec">
+    <div class="sec-head"><div class="sec-title">Evolução do património</div></div>
+    <div class="chart-wrap">
+      <canvas id="chart-pat" height="180"></canvas>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- BOTTOM NAV mobile -->
+<div class="bottom-nav">
+  <div class="bn-scroll">
+    <button class="bn-item active" id="bn-diario" onclick="navM('diario','bn-diario')"><span class="bn-icon">📅</span>Diário</button>
+    <button class="bn-item" id="bn-semanal" onclick="navM('semanal','bn-semanal')"><span class="bn-icon">📊</span>Semanal</button>
+    <button class="bn-item" id="bn-mensal" onclick="navM('mensal','bn-mensal')"><span class="bn-icon">🗓️</span>Mensal</button>
+    <button class="bn-item" id="bn-anual" onclick="navM('anual','bn-anual')"><span class="bn-icon">📈</span>Anual</button>
+    <button class="bn-item" id="bn-padroes" onclick="navM('padroes','bn-padroes')"><span class="bn-icon">🔍</span>Padrões</button>
+    <button class="bn-item" id="bn-comparar" onclick="navM('comparar','bn-comparar')"><span class="bn-icon">⚖️</span>Comparar</button>
+    <button class="bn-item" id="bn-patrimonio" onclick="navM('patrimonio','bn-patrimonio')"><span class="bn-icon">💎</span>Património</button>
+  </div>
+</div>
+
+<!-- MODAL ACTIVO -->
+<div class="modal-bg" id="modal-activo">
+  <div class="modal">
+    <div class="modal-title" id="mact-title">Novo Activo</div>
+    <div class="modal-fields">
+      <div class="inp-group"><div class="inp-label">Nome</div><input type="text" id="mact-nome" class="inp" placeholder="Ex: Moto Honda CG 125"></div>
+      <div class="inp-group"><div class="inp-label">Categoria</div>
+        <select id="mact-cat" class="inp-sel" style="width:100%;border-bottom:2px solid var(--gold);">
+          <option value="stock">Stock (grades)</option>
+          <option value="veiculo">Veículo</option>
+          <option value="imovel">Imóvel</option>
+          <option value="equipamento">Equipamento</option>
+          <option value="dinheiro">Dinheiro / Caixa</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="inp-group"><div class="inp-label">Valor actual de mercado (Kz)</div><input type="number" id="mact-val" class="inp" placeholder="0"></div>
+      <div class="inp-group" id="mact-grades-wrap" style="display:none;"><div class="inp-label">Quantidade (grades)</div><input type="number" id="mact-grades" class="inp" placeholder="0" oninput="calcActivoGrades()"></div>
+      <div class="inp-group"><div class="inp-label">Data de aquisição</div><input type="date" id="mact-data" class="inp"></div>
+      <div class="inp-group"><div class="inp-label">Nota</div><input type="text" id="mact-nota" class="inp" placeholder="Opcional"></div>
+    </div>
+    <div class="modal-row">
+      <button class="btn btn-ghost" onclick="closeModal('modal-activo')">Cancelar</button>
+      <button class="btn" onclick="saveActivo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PASSIVO -->
+<div class="modal-bg" id="modal-passivo">
+  <div class="modal">
+    <div class="modal-title">Novo Passivo</div>
+    <div class="modal-fields">
+      <div class="inp-group"><div class="inp-label">Descrição</div><input type="text" id="mpass-nome" class="inp" placeholder="Ex: Empréstimo fornecedor"></div>
+      <div class="inp-group"><div class="inp-label">Valor em dívida (Kz)</div><input type="number" id="mpass-val" class="inp" placeholder="0"></div>
+      <div class="inp-group"><div class="inp-label">Credor</div><input type="text" id="mpass-credor" class="inp" placeholder="Ex: BFA, fornecedor X"></div>
+      <div class="inp-group"><div class="inp-label">Data limite</div><input type="date" id="mpass-data" class="inp"></div>
+    </div>
+    <div class="modal-row">
+      <button class="btn btn-ghost" onclick="closeModal('modal-passivo')">Cancelar</button>
+      <button class="btn btn-r" onclick="savePassivo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════
+const DIAS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+let D={
+  dias:[],      // {id,data,dia,grades,receita,custo,nota}
+  activos:[],   // {id,nome,cat,val,grades,data,nota}
+  passivos:[],  // {id,nome,val,credor,data}
+  patHist:[],   // {data,total}
+  pVenda:6500,
+  pCusto:6100,
+  editActivo:null
+};
+
+let compMode='semana';
+
+// ═══════════════════════════════════════════
+// PERSISTÊNCIA
+// ═══════════════════════════════════════════
+function save(){localStorage.setItem('analise_sd',JSON.stringify(D));}
+function load(){
+  const raw=localStorage.getItem('analise_sd');
+  if(raw) try{D=JSON.parse(raw);}catch(e){}
+  if(!D.dias) D.dias=[];
+  if(!D.activos) D.activos=[];
+  if(!D.passivos) D.passivos=[];
+  if(!D.patHist) D.patHist=[];
+  if(!D.pVenda) D.pVenda=6500;
+  if(!D.pCusto) D.pCusto=6100;
+}
+function uid(){return Math.random().toString(36).slice(2,8);}
+
+// ═══════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════
+function nav(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  const bnBtn=document.getElementById('bn-'+id);
+  if(bnBtn) bnBtn.classList.add('active');
+  renderPage(id);
+}
+function navM(id,btnId){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById(btnId).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  renderPage(id);
+}
+function renderPage(id){
+  if(id==='diario') renderDiario();
+  else if(id==='semanal') renderSemanal();
+  else if(id==='mensal') renderMensal();
+  else if(id==='anual') renderAnual();
+  else if(id==='padroes') renderPadroes();
+  else if(id==='comparar') renderCompar();
+  else if(id==='patrimonio') renderPatrimonio();
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function fmt(n){if(n===undefined||n===null||isNaN(n)) return '—';return Math.round(n).toLocaleString('pt-PT');}
+function fmtK(n){if(!n&&n!==0) return '—';if(Math.abs(n)>=1000000) return (n/1000000).toFixed(1)+'M';if(Math.abs(n)>=1000) return (n/1000).toFixed(0)+'K';return Math.round(n)+'';}
+function deltaClass(v){return v>0?'up':v<0?'dn':'neutral';}
+function deltaBadge(v){
+  if(v===null||v===undefined||isNaN(v)) return '<span class="badge badge-y">—</span>';
+  const s=v>0?'▲ +'+fmtK(v):v<0?'▼ '+fmtK(v):'→ 0';
+  return `<span class="badge ${v>0?'badge-g':v<0?'badge-r':'badge-y'}">${s}</span>`;
+}
+function getDiaSemana(dataStr){
+  const d=new Date(dataStr+'T12:00:00');return DIAS[d.getDay()];
+}
+function getWeekKey(dataStr){
+  const d=new Date(dataStr+'T12:00:00');
+  const jan1=new Date(d.getFullYear(),0,1);
+  const wk=Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+  return d.getFullYear()+'-W'+String(wk).padStart(2,'0');
+}
+function getMonthKey(dataStr){return dataStr.slice(0,7);}
+function getYearKey(dataStr){return dataStr.slice(0,4);}
+function margem(d){return (d.receita||0)-(d.custo||0);}
+
+// ═══════════════════════════════════════════
+// REGISTAR DIA
+// ═══════════════════════════════════════════
+document.getElementById('d-data').addEventListener('change',function(){
+  document.getElementById('d-dia').value=getDiaSemana(this.value);
+});
+// Set today
+(function(){
+  const t=new Date();
+  const iso=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+  document.getElementById('d-data').value=iso;
+  document.getElementById('d-dia').value=getDiaSemana(iso);
+})();
+
+function addDia(){
+  const data=document.getElementById('d-data').value;
+  const grades=+document.getElementById('d-grades').value;
+  const receita=+document.getElementById('d-receita').value;
+  const custo=+document.getElementById('d-custo').value;
+  const nota=document.getElementById('d-nota').value.trim();
+  if(!data){toast('Indica a data'); return;}
+  // auto-calc receita/custo se não preenchido
+  const r=receita||grades*D.pVenda;
+  const c=custo||grades*D.pCusto;
+  // check duplicado
+  const idx=D.dias.findIndex(d=>d.data===data);
+  if(idx>=0){if(!confirm('Já existe registo para este dia. Substituir?')) return; D.dias.splice(idx,1);}
+  D.dias.push({id:uid(),data,dia:getDiaSemana(data),grades,receita:r,custo:c,nota});
+  D.dias.sort((a,b)=>a.data.localeCompare(b.data));
+  document.getElementById('d-grades').value='';
+  document.getElementById('d-receita').value='';
+  document.getElementById('d-custo').value='';
+  document.getElementById('d-nota').value='';
+  save();
+  renderDiario();
+  renderTopbar();
+  toast('Dia registado ✓');
+}
+
+function deleteDia(id){
+  D.dias=D.dias.filter(d=>d.id!==id);
+  save(); renderDiario(); renderTopbar(); toast('Removido');
+}
+
+// ═══════════════════════════════════════════
+// RENDER DIÁRIO
+// ═══════════════════════════════════════════
+function renderDiario(){
+  const dias=D.dias;
+  if(!dias.length){
+    document.getElementById('d-log').innerHTML='<tr><td colspan="9" style="color:var(--txt3);padding:20px;text-align:center;">Nenhum registo ainda</td></tr>';
+    drawDias([],[]);
+    return;
+  }
+
+  // semanas distintas
+  const semanas=[...new Set(dias.map(d=>getWeekKey(d.data)))].sort().reverse();
+  const selSem=document.getElementById('d-filtro-sem');
+  const curVal=selSem.value;
+  selSem.innerHTML='<option value="all">Todas as semanas</option>'+semanas.map(s=>`<option value="${s}">${s}</option>`).join('');
+  if(curVal) selSem.value=curVal;
+
+  // semana actual e anterior
+  const semAtual=semanas[0]||'';
+  const semAnt=semanas[1]||'';
+  const diasAtual=dias.filter(d=>getWeekKey(d.data)===semAtual);
+  const diasAnt=dias.filter(d=>getWeekKey(d.data)===semAnt);
+
+  // KPIs
+  const hoje=dias[dias.length-1];
+  const ontem=dias.length>1?dias[dias.length-2]:null;
+  const bestSem=diasAtual.length?diasAtual.reduce((a,b)=>b.grades>a.grades?b:a,diasAtual[0]):null;
+
+  set('d-k-hoje',hoje?fmtK(hoje.grades):'—');
+  set('d-k-rec',hoje?fmtK(hoje.receita)+' Kz':'—');
+  set('d-k-mg',hoje?fmtK(margem(hoje))+' Kz':'—');
+  set('d-k-best',bestSem?fmtK(bestSem.grades):'—');
+  set('d-k-best-d',bestSem?bestSem.dia+' '+bestSem.data.slice(5):'da semana');
+
+  if(ontem){
+    setDelta('d-k-hoje-d',hoje.grades-ontem.grades,'vs ontem ('+ontem.dia+')');
+    setDelta('d-k-rec-d',hoje.receita-ontem.receita,'vs ontem');
+    setDelta('d-k-mg-d',margem(hoje)-margem(ontem),'vs ontem');
+  }
+
+  // Tabela comparação dia a dia
+  const dowMap={};
+  diasAtual.forEach(d=>{dowMap[d.dia]=d;});
+  const dowMapAnt={};
+  diasAnt.forEach(d=>{dowMapAnt[d.dia]=d;});
+  const tbody=document.getElementById('d-compare-body');
+  tbody.innerHTML='';
+  ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(dia=>{
+    const a=dowMap[dia],b=dowMapAnt[dia];
+    const dg=a&&b?a.grades-b.grades:null;
+    const dr=a&&b?a.receita-b.receita:null;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="highlight">${dia}</td>
+      <td>${a?fmtK(a.grades)+' gr  ·  '+fmtK(a.receita)+' Kz':'—'}</td>
+      <td style="color:var(--txt3)">${b?fmtK(b.grades)+' gr  ·  '+fmtK(b.receita)+' Kz':'—'}</td>
+      <td class="${deltaClass(dg)}">${dg!==null?(dg>0?'+':'')+dg:'—'}</td>
+      <td class="${deltaClass(dr)}">${dr!==null?(dr>0?'+':'')+fmtK(dr)+' Kz':'—'}</td>
+      <td>${dg===null?'':'<span class="badge '+(dg>0?'badge-g':dg<0?'badge-r':'badge-y')+'">'+(dg>0?'▲ Melhor':dg<0?'▼ Pior':'→ Igual')+'</span>'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Log filtrado
+  const filtro=document.getElementById('d-filtro-sem').value;
+  const filtered=filtro==='all'?[...dias].reverse():dias.filter(d=>getWeekKey(d.data)===filtro).reverse();
+  document.getElementById('d-log').innerHTML=filtered.map(d=>`
+    <tr>
+      <td class="highlight">${d.data}</td>
+      <td>${d.dia}</td>
+      <td>${d.grades}</td>
+      <td>${fmt(d.receita)} Kz</td>
+      <td>${fmt(d.custo)} Kz</td>
+      <td class="${margem(d)>0?'up':margem(d)<0?'dn':'neutral'}">${fmt(margem(d))} Kz</td>
+      <td style="color:var(--txt3);font-size:9px;">${getWeekKey(d.data)}</td>
+      <td style="color:var(--txt3);font-size:10px;">${d.nota||''}</td>
+      <td><button onclick="deleteDia('${d.id}')" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-size:12px;">✕</button></td>
+    </tr>
+  `).join('');
+
+  // Gráfico
+  drawDias(diasAtual,diasAnt);
+}
+
+function setDelta(id,v,label){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.textContent=(v>0?'▲ +':v<0?'▼ ':'')+fmtK(Math.abs(v))+' '+label;
+  el.className='kcard-delta '+(v>0?'delta-up':v<0?'delta-dn':'delta-eq');
+}
+
+// ═══════════════════════════════════════════
+// SEMANAL
+// ═══════════════════════════════════════════
+function getSemanas(){
+  const map={};
+  D.dias.forEach(d=>{
+    const k=getWeekKey(d.data);
+    if(!map[k]) map[k]={key:k,grades:0,receita:0,margem:0,dias:[]};
+    map[k].grades+=d.grades;
+    map[k].receita+=d.receita;
+    map[k].margem+=margem(d);
+    map[k].dias.push(d);
+  });
+  return Object.values(map).sort((a,b)=>a.key.localeCompare(b.key));
+}
+
+function renderSemanal(){
+  const sems=getSemanas();
+  if(!sems.length){
+    document.getElementById('s-log').innerHTML='<tr><td colspan="7" style="color:var(--txt3);padding:20px;text-align:center;">Sem dados</td></tr>';
+    return;
+  }
+  const grades=sems.map(s=>s.grades);
+  const best=sems.reduce((a,b)=>b.grades>a.grades?b:a);
+  const worst=sems.reduce((a,b)=>b.grades<a.grades?b:a);
+  const avg=grades.reduce((a,b)=>a+b,0)/grades.length;
+  const last4=sems.slice(-4).map(s=>s.grades);
+  const trend=last4.length>1?((last4[last4.length-1]-last4[0])/last4[0]*100).toFixed(1):null;
+
+  set('s-best',fmtK(best.grades)); set('s-best-d',best.key);
+  set('s-worst',fmtK(worst.grades)); set('s-worst-d',worst.key);
+  set('s-avg',fmtK(avg));
+  set('s-trend',trend!==null?(trend>0?'▲ +':'▼ ')+trend+'%':'—');
+  document.getElementById('s-trend').style.color=trend>0?'var(--g2)':trend<0?'var(--r2)':'var(--txt2)';
+
+  document.getElementById('s-log').innerHTML=sems.slice().reverse().map((s,i,arr)=>{
+    const prev=arr[i+1];
+    const dg=prev?s.grades-prev.grades:null;
+    return `<tr>
+      <td class="highlight">${s.key}</td>
+      <td style="color:var(--txt3);font-size:9px;">${s.dias[0]?.data||''} – ${s.dias[s.dias.length-1]?.data||''}</td>
+      <td>${s.grades}</td>
+      <td>${fmt(s.receita)} Kz</td>
+      <td class="${s.margem>0?'up':'dn'}">${fmt(s.margem)} Kz</td>
+      <td>${deltaBadge(dg)}</td>
+      <td><span class="badge ${s.grades>=150?'badge-g':s.grades>=100?'badge-y':'badge-r'}">${s.grades>=150?'✓ Meta':s.grades>=100?'Perto':'Abaixo'}</span></td>
+    </tr>`;
+  }).join('');
+
+  drawLine('chart-semanas',sems.map(s=>s.key.slice(5)),sems.map(s=>s.grades),'Grades','var(--gold)',150);
+}
+
+// ═══════════════════════════════════════════
+// MENSAL
+// ═══════════════════════════════════════════
+function getMeses(){
+  const map={};
+  D.dias.forEach(d=>{
+    const k=getMonthKey(d.data);
+    if(!map[k]) map[k]={key:k,grades:0,receita:0,margem:0};
+    map[k].grades+=d.grades; map[k].receita+=d.receita; map[k].margem+=margem(d);
+  });
+  return Object.values(map).sort((a,b)=>a.key.localeCompare(b.key));
+}
+
+function renderMensal(){
+  const meses=getMeses();
+  if(!meses.length){document.getElementById('m-log').innerHTML='<tr><td colspan="7" style="color:var(--txt3);padding:20px;text-align:center;">Sem dados</td></tr>';return;}
+  const best=meses.reduce((a,b)=>b.grades>a.grades?b:a);
+  const worst=meses.reduce((a,b)=>b.grades<a.grades?b:a);
+  const avg=meses.reduce((a,b)=>a+b.grades,0)/meses.length;
+  const cur=meses[meses.length-1];
+  const prev=meses.length>1?meses[meses.length-2]:null;
+
+  set('m-best',fmtK(best.grades)); set('m-best-d',best.key);
+  set('m-worst',fmtK(worst.grades)); set('m-worst-d',worst.key);
+  set('m-avg',fmtK(avg));
+  set('m-cur',fmtK(cur.grades));
+  if(prev) setDelta('m-cur-d',cur.grades-prev.grades,'vs mês ant.');
+
+  document.getElementById('m-log').innerHTML=meses.slice().reverse().map((m,i,arr)=>{
+    const p=arr[i+1];
+    const dg=p?m.grades-p.grades:null;
+    const nomeMes=MESES[+m.key.slice(5)-1];
+    return `<tr>
+      <td class="highlight">${nomeMes}</td>
+      <td style="color:var(--txt3)">${m.key.slice(0,4)}</td>
+      <td>${m.grades}</td>
+      <td>${fmt(m.receita)} Kz</td>
+      <td class="${m.margem>0?'up':'dn'}">${fmt(m.margem)} Kz</td>
+      <td>${deltaBadge(dg)}</td>
+      <td><span class="badge ${m.grades>avg?'badge-g':'badge-r'}">${m.grades>avg?'Acima méd.':'Abaixo méd.'}</span></td>
+    </tr>`;
+  }).join('');
+
+  const labels=meses.map(m=>MESES[+m.key.slice(5)-1]+' '+m.key.slice(2,4));
+  drawLine('chart-meses',labels,meses.map(m=>m.grades),'Grades/mês','var(--b2)',null);
+}
+
+// ═══════════════════════════════════════════
+// ANUAL
+// ═══════════════════════════════════════════
+function getAnos(){
+  const map={};
+  D.dias.forEach(d=>{
+    const k=getYearKey(d.data);
+    if(!map[k]) map[k]={key:k,grades:0,receita:0,margem:0,meses:{}};
+    map[k].grades+=d.grades; map[k].receita+=d.receita; map[k].margem+=margem(d);
+    const m=getMonthKey(d.data);
+    if(!map[k].meses[m]) map[k].meses[m]=0;
+    map[k].meses[m]+=d.grades;
+  });
+  return Object.values(map).sort((a,b)=>a.key.localeCompare(b.key));
+}
+
+function renderAnual(){
+  const anos=getAnos();
+  const all=D.dias;
+  set('a-total',fmtK(all.reduce((a,b)=>a+b.grades,0)));
+  set('a-rec',fmtK(all.reduce((a,b)=>a+b.receita,0))+' Kz');
+  set('a-mg',fmtK(all.reduce((a,b)=>a+margem(b),0))+' Kz');
+
+  if(!anos.length){document.getElementById('a-log').innerHTML='<tr><td colspan="7" style="color:var(--txt3);padding:20px;text-align:center;">Sem dados</td></tr>';return;}
+
+  document.getElementById('a-log').innerHTML=anos.slice().reverse().map((a,i,arr)=>{
+    const p=arr[i+1];
+    const dg=p?a.grades-p.grades:null;
+    const mVals=Object.entries(a.meses);
+    const bestM=mVals.length?mVals.reduce((x,y)=>y[1]>x[1]?y:x):null;
+    const worstM=mVals.length?mVals.reduce((x,y)=>y[1]<x[1]?y:x):null;
+    return `<tr>
+      <td class="highlight" style="font-size:16px;">${a.key}</td>
+      <td>${a.grades}</td>
+      <td>${fmt(a.receita)} Kz</td>
+      <td class="${a.margem>0?'up':'dn'}">${fmt(a.margem)} Kz</td>
+      <td style="color:var(--g2)">${bestM?MESES[+bestM[0].slice(5)-1]:'—'}</td>
+      <td style="color:var(--r2)">${worstM?MESES[+worstM[0].slice(5)-1]:'—'}</td>
+      <td>${deltaBadge(dg)}</td>
+    </tr>`;
+  }).join('');
+
+  drawBar('chart-anos',anos.map(a=>a.key),anos.map(a=>a.grades),'Grades/ano','var(--gold)');
+}
+
+// ═══════════════════════════════════════════
+// PADRÕES
+// ═══════════════════════════════════════════
+function renderPadroes(){
+  const dias=D.dias;
+  if(!dias.length){
+    document.getElementById('insights-list').innerHTML='<div class="insight"><div class="insight-head">Sem dados</div><div class="insight-body">Regista dias para gerar insights automáticos.</div></div>';
+    return;
+  }
+
+  // Média por dia da semana
+  const dowG={Seg:[],Ter:[],Qua:[],Qui:[],Sex:[],Sáb:[],Dom:[]};
+  dias.forEach(d=>{ if(dowG[d.dia]) dowG[d.dia].push(d.grades); });
+  const dowAvg={};
+  Object.keys(dowG).forEach(d=>{ dowAvg[d]=dowG[d].length?dowG[d].reduce((a,b)=>a+b,0)/dowG[d].length:0; });
+
+  const bestDow=Object.entries(dowAvg).reduce((a,b)=>b[1]>a[1]?b:a);
+  const worstDow=Object.entries(dowAvg).filter(e=>e[1]>0).reduce((a,b)=>b[1]<a[1]?b:a,['—',999]);
+
+  // Top & Bottom 5 dias
+  const sorted=[...dias].sort((a,b)=>b.grades-a.grades);
+  document.getElementById('top5-dias').innerHTML=sorted.slice(0,5).map((d,i)=>`<tr>
+    <td style="color:var(--gold)">${i+1}</td>
+    <td class="highlight">${d.data}</td><td>${d.dia}</td>
+    <td class="up">${d.grades}</td><td class="up">${fmt(margem(d))} Kz</td>
+  </tr>`).join('');
+  document.getElementById('bot5-dias').innerHTML=[...sorted].reverse().slice(0,5).map((d,i)=>`<tr>
+    <td style="color:var(--r2)">${i+1}</td>
+    <td class="highlight">${d.data}</td><td>${d.dia}</td>
+    <td class="dn">${d.grades}</td><td class="dn">${fmt(margem(d))} Kz</td>
+  </tr>`).join('');
+
+  // Insights
+  const insights=[];
+  insights.push({head:'Dia mais forte da semana',body:`<strong>${bestDow[0]}</strong> é o teu melhor dia em média — <strong>${bestDow[1].toFixed(0)} grades</strong>. Garante stock no dia anterior.`});
+  if(worstDow[0]!=='—') insights.push({head:'Dia mais fraco',body:`<strong>${worstDow[0]}</strong> regista a menor actividade (${worstDow[1].toFixed(0)} grades). Podes usar este dia para reposição ou gestão.`});
+
+  const sems=getSemanas();
+  if(sems.length>=4){
+    const last4=sems.slice(-4);
+    const trend=last4[3].grades-last4[0].grades;
+    insights.push({head:'Tendência das últimas 4 semanas',body:trend>0?`Crescimento de <strong>+${trend} grades</strong> nas últimas 4 semanas. Mantém o ritmo.`:`Queda de <strong>${trend} grades</strong>. Avalia o que mudou.`});
+  }
+
+  const meses=getMeses();
+  if(meses.length>=2){
+    const festivos=['2024-12','2023-12','2025-12'];
+    const festData=meses.filter(m=>festivos.includes(m.key));
+    if(festData.length) insights.push({head:'Sazonalidade detectada',body:`Dezembro tem historicamente vendas superiores — confirma nos teus dados e prepara stock extra.`});
+  }
+
+  document.getElementById('insights-list').innerHTML=insights.map(i=>`
+    <div class="insight">
+      <div class="insight-head">⚡ ${i.head}</div>
+      <div class="insight-body">${i.body}</div>
+    </div>
+  `).join('');
+
+  // Heatmap
+  const maxDow=Math.max(...Object.values(dowAvg));
+  const dowOrder=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  document.getElementById('heatmap-dias').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;">
+      ${dowOrder.map(d=>`<div class="hm-label">${d}</div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
+      ${dowOrder.map(d=>{
+        const v=dowAvg[d]||0;
+        const lvl=maxDow>0?Math.ceil((v/maxDow)*4):0;
+        return `<div class="hm-cell hm-${lvl}" title="${d}: ${v.toFixed(0)} grades em média">${v>0?v.toFixed(0):''}</div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
+      <span style="font-size:8px;color:var(--txt3);">Menor</span>
+      ${[0,1,2,3,4].map(l=>`<div style="width:14px;height:14px;" class="hm-cell hm-${l}"></div>`).join('')}
+      <span style="font-size:8px;color:var(--txt3);">Maior</span>
+    </div>
+  `;
+
+  drawBar('chart-dow',dowOrder,dowOrder.map(d=>dowAvg[d]||0),'Média grades','var(--gold)');
+
+  // Sazonalidade
+  const monAvg=Array(12).fill(0);const monCnt=Array(12).fill(0);
+  D.dias.forEach(d=>{const m=+d.data.slice(5,7)-1;monAvg[m]+=d.grades;monCnt[m]++;});
+  const monFinal=monAvg.map((v,i)=>monCnt[i]?v/monCnt[i]:0);
+  drawBar('chart-sazon',MESES,monFinal,'Média grades/mês','var(--pu2)');
+}
+
+// ═══════════════════════════════════════════
+// COMPARAR
+// ═══════════════════════════════════════════
+function setCompMode(mode,btn){
+  compMode=mode;
+  document.querySelectorAll('#comp-tabs .pt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  populateCompSelects();
+  renderCompar();
+}
+
+function populateCompSelects(){
+  let opts=[];
+  if(compMode==='semana') opts=[...new Set(D.dias.map(d=>getWeekKey(d.data)))].sort().reverse();
+  else if(compMode==='mes') opts=[...new Set(D.dias.map(d=>getMonthKey(d.data)))].sort().reverse();
+  else opts=[...new Set(D.dias.map(d=>getYearKey(d.data)))].sort().reverse();
+  const a=document.getElementById('comp-a');
+  const b=document.getElementById('comp-b');
+  const html=opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+  a.innerHTML=html; b.innerHTML=html;
+  if(opts.length>1) b.value=opts[1];
+}
+
+function getDataForPeriod(key){
+  let fn;
+  if(compMode==='semana') fn=d=>getWeekKey(d.data)===key;
+  else if(compMode==='mes') fn=d=>getMonthKey(d.data)===key;
+  else fn=d=>getYearKey(d.data)===key;
+  const dias=D.dias.filter(fn);
+  return{
+    key,grades:dias.reduce((a,b)=>a+b.grades,0),
+    receita:dias.reduce((a,b)=>a+b.receita,0),
+    margem:dias.reduce((a,b)=>a+margem(b),0),
+    dias
+  };
+}
+
+function renderCompar(){
+  const a=document.getElementById('comp-a').value;
+  const b=document.getElementById('comp-b').value;
+  if(!a||!b){document.getElementById('comp-result').innerHTML='';return;}
+  const da=getDataForPeriod(a), db=getDataForPeriod(b);
+  const dg=da.grades-db.grades, dr=da.receita-db.receita, dm=da.margem-db.margem;
+
+  document.getElementById('comp-result').innerHTML=`
+    <div class="comp-strip">
+      <div class="comp-side">
+        <div class="comp-label">${a}</div>
+        <div class="comp-val" style="color:var(--gold)">${da.grades}</div>
+        <div class="comp-sub">grades · ${fmt(da.margem)} Kz margem</div>
+      </div>
+      <div class="comp-vs">vs</div>
+      <div class="comp-side">
+        <div class="comp-label">${b}</div>
+        <div class="comp-val" style="color:var(--txt2)">${db.grades}</div>
+        <div class="comp-sub">grades · ${fmt(db.margem)} Kz margem</div>
+      </div>
+    </div>
+    <div class="cards cards-3" style="margin-bottom:16px;">
+      <div class="kcard">
+        <div class="kcard-label">Δ Grades</div>
+        <div class="kcard-val ${deltaClass(dg)}" style="color:${dg>0?'var(--g2)':dg<0?'var(--r2)':'var(--txt2)'}">${dg>0?'+':''}${dg}</div>
+        <div class="kcard-sub">${dg>0?'Período A melhor':'Período B melhor'}</div>
+      </div>
+      <div class="kcard">
+        <div class="kcard-label">Δ Receita</div>
+        <div class="kcard-val" style="color:${dr>0?'var(--g2)':dr<0?'var(--r2)':'var(--txt2)'}">${dr>0?'+':''}${fmtK(dr)} Kz</div>
+        <div class="kcard-sub">${Math.abs(dr)>0?Math.abs((dr/Math.max(db.receita,1)*100)).toFixed(1)+'% diferença':'igual'}</div>
+      </div>
+      <div class="kcard">
+        <div class="kcard-label">Δ Margem</div>
+        <div class="kcard-val" style="color:${dm>0?'var(--g2)':dm<0?'var(--r2)':'var(--txt2)'}">${dm>0?'+':''}${fmtK(dm)} Kz</div>
+        <div class="kcard-sub">${dm>0?'Mais lucrativo':'Menos lucrativo'}</div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Comparação visual</div>
+      <canvas id="chart-comp" height="140"></canvas>
+    </div>
+  `;
+
+  // mini chart comparação
+  setTimeout(()=>{
+    const canvas=document.getElementById('chart-comp');
+    if(!canvas) return;
+    const ctx=canvas.getContext('2d');
+    const W=canvas.offsetWidth||400; canvas.width=W; canvas.height=140;
+    const metrics=[
+      {label:'Grades',a:da.grades,b:db.grades},
+      {label:'Receita K',a:da.receita/1000,b:db.receita/1000},
+      {label:'Margem K',a:da.margem/1000,b:db.margem/1000}
+    ];
+    const bw=(W-60)/metrics.length/3;
+    metrics.forEach((m,i)=>{
+      const x=30+i*(bw*3+10);
+      const maxV=Math.max(m.a,m.b,1);
+      const ha=Math.round((m.a/maxV)*100); const hb=Math.round((m.b/maxV)*100);
+      // A
+      ctx.fillStyle='rgba(212,168,67,.8)';
+      ctx.fillRect(x,120-ha,bw,ha);
+      // B
+      ctx.fillStyle='rgba(255,255,255,.2)';
+      ctx.fillRect(x+bw+2,120-hb,bw,hb);
+      ctx.fillStyle='rgba(255,255,255,.4)';
+      ctx.font='8px Fira Code'; ctx.textAlign='center';
+      ctx.fillText(m.label,x+bw,130);
+    });
+    // legenda
+    ctx.fillStyle='rgba(212,168,67,.8)'; ctx.fillRect(W-100,8,10,10);
+    ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='8px Fira Code'; ctx.textAlign='left';
+    ctx.fillText(a,W-86,17);
+    ctx.fillStyle='rgba(255,255,255,.2)'; ctx.fillRect(W-100,22,10,10);
+    ctx.fillStyle='rgba(255,255,255,.4)';
+    ctx.fillText(b,W-86,31);
+  },50);
+}
+
+// ═══════════════════════════════════════════
+// PATRIMÓNIO
+// ═══════════════════════════════════════════
+let editActivoId=null;
+
+function openModalActivo(id=null){
+  editActivoId=id;
+  const m=id?D.activos.find(a=>a.id===id):null;
+  document.getElementById('mact-title').textContent=id?'Editar Activo':'Novo Activo';
+  document.getElementById('mact-nome').value=m?.nome||'';
+  document.getElementById('mact-cat').value=m?.cat||'stock';
+  document.getElementById('mact-val').value=m?.val||'';
+  document.getElementById('mact-grades').value=m?.grades||'';
+  document.getElementById('mact-data').value=m?.data||new Date().toISOString().slice(0,10);
+  document.getElementById('mact-nota').value=m?.nota||'';
+  toggleGradesField();
+  document.getElementById('modal-activo').classList.add('open');
+}
+function openModalPassivo(){
+  document.getElementById('mpass-nome').value='';
+  document.getElementById('mpass-val').value='';
+  document.getElementById('mpass-credor').value='';
+  document.getElementById('mpass-data').value='';
+  document.getElementById('modal-passivo').classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+document.getElementById('mact-cat').addEventListener('change',toggleGradesField);
+function toggleGradesField(){
+  const cat=document.getElementById('mact-cat').value;
+  document.getElementById('mact-grades-wrap').style.display=cat==='stock'?'flex':'none';
+}
+function calcActivoGrades(){
+  const g=+document.getElementById('mact-grades').value;
+  if(g>0) document.getElementById('mact-val').value=g*D.pVenda;
+}
+
+function saveActivo(){
+  const nome=document.getElementById('mact-nome').value.trim();
+  const cat=document.getElementById('mact-cat').value;
+  const val=+document.getElementById('mact-val').value;
+  const grades=+document.getElementById('mact-grades').value;
+  const data=document.getElementById('mact-data').value;
+  const nota=document.getElementById('mact-nota').value.trim();
+  if(!nome||!val){toast('Preenche nome e valor');return;}
+  if(editActivoId){
+    const idx=D.activos.findIndex(a=>a.id===editActivoId);
+    if(idx>=0) D.activos[idx]={...D.activos[idx],nome,cat,val,grades,data,nota};
+  }else{
+    D.activos.push({id:uid(),nome,cat,val,grades,data,nota});
+  }
+  snapPatHist();
+  save(); closeModal('modal-activo'); renderPatrimonio(); renderTopbar(); toast('Activo guardado ✓');
+}
+
+function savePassivo(){
+  const nome=document.getElementById('mpass-nome').value.trim();
+  const val=+document.getElementById('mpass-val').value;
+  const credor=document.getElementById('mpass-credor').value.trim();
+  const data=document.getElementById('mpass-data').value;
+  if(!nome||!val){toast('Preenche descrição e valor');return;}
+  D.passivos.push({id:uid(),nome,val,credor,data});
+  snapPatHist();
+  save(); closeModal('modal-passivo'); renderPatrimonio(); renderTopbar(); toast('Passivo registado ✓');
+}
+
+function deleteActivo(id){D.activos=D.activos.filter(a=>a.id!==id);snapPatHist();save();renderPatrimonio();renderTopbar();}
+function deletePassivo(id){D.passivos=D.passivos.filter(a=>a.id!==id);snapPatHist();save();renderPatrimonio();renderTopbar();}
+
+function snapPatHist(){
+  const total=D.activos.reduce((a,b)=>a+b.val,0);
+  const today=new Date().toISOString().slice(0,10);
+  const idx=D.patHist.findIndex(p=>p.data===today);
+  if(idx>=0) D.patHist[idx].total=total;
+  else D.patHist.push({data:today,total});
+}
+
+const CAT_ICONS={stock:'📦',veiculo:'🏍️',imovel:'🏠',equipamento:'🔧',dinheiro:'💵',outro:'📌'};
+const CAT_NAMES={stock:'Stock',veiculo:'Veículo',imovel:'Imóvel',equipamento:'Equipamento',dinheiro:'Caixa',outro:'Outro'};
+const CAT_COLORS={stock:'var(--gold)',veiculo:'var(--b2)',imovel:'var(--g2)',equipamento:'var(--pu2)',dinheiro:'var(--g2)',outro:'var(--txt2)'};
+
+function renderPatrimonio(){
+  const total=D.activos.reduce((a,b)=>a+b.val,0);
+  const pass=D.passivos.reduce((a,b)=>a+b.val,0);
+  const liq=total-pass;
+  set('pat-total',fmt(total)+' Kz');
+  set('pat-passivos',fmt(pass)+' Kz');
+  set('pat-liquido',fmt(liq)+' Kz');
+
+  document.getElementById('activos-grid').innerHTML=D.activos.length?
+    D.activos.map(a=>`
+      <div class="pat-card">
+        <div class="pat-card-top">
+          <div>
+            <div class="pat-name">${CAT_ICONS[a.cat]||'📌'} ${a.nome}</div>
+            <div class="pat-cat">${CAT_NAMES[a.cat]||a.cat}${a.grades?' · '+a.grades+' grades':''}</div>
+          </div>
+          <span class="badge badge-b">${a.data||''}</span>
+        </div>
+        <div class="pat-val" style="color:${CAT_COLORS[a.cat]||'var(--gold)'}">${fmt(a.val)} Kz</div>
+        ${a.nota?`<div class="pat-sub">${a.nota}</div>`:''}
+        <div class="pat-actions">
+          <button class="pat-btn" onclick="openModalActivo('${a.id}')">✏ Editar</button>
+          <button class="pat-btn" onclick="deleteActivo('${a.id}')" style="color:var(--r2);">✕ Remover</button>
+        </div>
+      </div>
+    `).join('')
+    :'<div style="color:var(--txt3);font-size:11px;padding:16px;">Nenhum activo registado.</div>';
+
+  document.getElementById('passivos-grid').innerHTML=D.passivos.length?
+    D.passivos.map(p=>`
+      <div class="pat-card" style="border-top:2px solid var(--r);">
+        <div class="pat-card-top">
+          <div>
+            <div class="pat-name">⚠ ${p.nome}</div>
+            <div class="pat-cat">${p.credor||'—'}</div>
+          </div>
+          ${p.data?`<span class="badge badge-r">Prazo: ${p.data}</span>`:''}
+        </div>
+        <div class="pat-val" style="color:var(--r2)">${fmt(p.val)} Kz</div>
+        <div class="pat-actions">
+          <button class="pat-btn" onclick="deletePassivo('${p.id}')" style="color:var(--r2);">✕ Liquidar / Remover</button>
+        </div>
+      </div>
+    `).join('')
+    :'<div style="color:var(--txt3);font-size:11px;padding:16px;">Sem passivos registados.</div>';
+
+  // Gráfico evolução
+  if(D.patHist.length>1){
+    const h=D.patHist.sort((a,b)=>a.data.localeCompare(b.data));
+    drawLine('chart-pat',h.map(p=>p.data.slice(5)),h.map(p=>p.total),'Património (Kz)','var(--gold)',null);
+  }
+}
+
+function renderTopbar(){
+  const total=D.activos.reduce((a,b)=>a+b.val,0);
+  const pass=D.passivos.reduce((a,b)=>a+b.val,0);
+  document.getElementById('tb-total-pat').textContent='Património: '+fmtK(total-pass)+' Kz';
+}
+
+// ═══════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════
+function drawDias(atual,ant){
+  const canvas=document.getElementById('chart-dias');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||400; canvas.width=W; canvas.height=160;
+  const dias=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const aMap={},bMap={};
+  atual.forEach(d=>aMap[d.dia]=d.grades);
+  ant.forEach(d=>bMap[d.dia]=d.grades);
+  const maxV=Math.max(...dias.map(d=>Math.max(aMap[d]||0,bMap[d]||0)),1);
+  const bw=(W-60)/dias.length/3;
+  ctx.clearRect(0,0,W,canvas.height);
+  dias.forEach((dia,i)=>{
+    const x=30+i*(bw*3+6);
+    const ha=Math.round(((aMap[dia]||0)/maxV)*110);
+    const hb=Math.round(((bMap[dia]||0)/maxV)*110);
+    ctx.fillStyle='rgba(212,168,67,.85)'; ctx.fillRect(x,130-ha,bw,ha);
+    ctx.fillStyle='rgba(255,255,255,.18)'; ctx.fillRect(x+bw+2,130-hb,bw,hb);
+    ctx.fillStyle='rgba(255,255,255,.4)'; ctx.font='8px Fira Code'; ctx.textAlign='center';
+    ctx.fillText(dia,x+bw,148);
+    if(aMap[dia]) {ctx.fillStyle='rgba(212,168,67,.9)';ctx.fillText(aMap[dia],x+bw/2,125-ha);}
+  });
+  // legenda
+  ctx.fillStyle='rgba(212,168,67,.85)'; ctx.fillRect(W-130,6,10,10);
+  ctx.fillStyle='rgba(255,255,255,.4)'; ctx.font='8px Fira Code'; ctx.textAlign='left';
+  ctx.fillText('Semana actual',W-116,15);
+  ctx.fillStyle='rgba(255,255,255,.18)'; ctx.fillRect(W-130,20,10,10);
+  ctx.fillStyle='rgba(255,255,255,.3)'; ctx.fillText('Semana anterior',W-116,29);
+}
+
+function drawLine(canvasId,labels,values,label,color,meta){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||600; canvas.width=W; canvas.height=180;
+  if(!values.length) return;
+  const pad={t:20,r:20,b:36,l:44};
+  const cW=W-pad.l-pad.r, cH=canvas.height-pad.t-pad.b;
+  const maxV=Math.max(...values,meta||0)*1.12||1;
+  ctx.clearRect(0,0,W,canvas.height);
+  // grid
+  [0,.25,.5,.75,1].forEach(r=>{
+    const y=pad.t+cH*(1-r);
+    ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cW,y); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.3)'; ctx.font='7px Fira Code'; ctx.textAlign='right';
+    ctx.fillText(fmtK(maxV*r),pad.l-4,y+3);
+  });
+  // meta line
+  if(meta){
+    const y=pad.t+cH*(1-meta/maxV);
+    ctx.strokeStyle='rgba(220,38,38,.5)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cW,y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='rgba(220,38,38,.7)'; ctx.font='7px Fira Code'; ctx.textAlign='left';
+    ctx.fillText('meta '+meta,pad.l+2,y-3);
+  }
+  // area
+  const pts=values.map((v,i)=>({x:pad.l+i*(cW/(values.length-1||1)),y:pad.t+cH*(1-v/maxV)}));
+  if(pts.length>1){
+    const grad=ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
+    grad.addColorStop(0,color.replace(')',',0.3)').replace('var(','rgba(255,200,50,'));
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+    pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.lineTo(pts[pts.length-1].x,pad.t+cH); ctx.lineTo(pts[0].x,pad.t+cH); ctx.closePath();
+    ctx.fillStyle=grad; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+    pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+    pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fillStyle=color; ctx.fill(); });
+  }
+  // labels x
+  const step=Math.ceil(labels.length/8);
+  labels.forEach((l,i)=>{
+    if(i%step===0){
+      ctx.fillStyle='rgba(255,255,255,.3)'; ctx.font='7px Fira Code'; ctx.textAlign='center';
+      const x=pad.l+i*(cW/(labels.length-1||1));
+      ctx.fillText(l,x,canvas.height-6);
+    }
+  });
+}
+
+function drawBar(canvasId,labels,values,label,color){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||400; canvas.width=W; canvas.height=180;
+  if(!values.length) return;
+  ctx.clearRect(0,0,W,canvas.height);
+  const pad={t:16,r:16,b:36,l:40};
+  const cW=W-pad.l-pad.r, cH=canvas.height-pad.t-pad.b;
+  const maxV=Math.max(...values,1)*1.12;
+  [0,.5,1].forEach(r=>{
+    const y=pad.t+cH*(1-r);
+    ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cW,y); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.3)'; ctx.font='7px Fira Code'; ctx.textAlign='right';
+    ctx.fillText(fmtK(maxV*r),pad.l-4,y+3);
+  });
+  const bw=Math.max(4,(cW/values.length)-4);
+  values.forEach((v,i)=>{
+    const h=Math.round((v/maxV)*cH);
+    const x=pad.l+i*(cW/values.length)+(cW/values.length-bw)/2;
+    const y=pad.t+cH-h;
+    ctx.fillStyle=color; ctx.globalAlpha=.8; ctx.fillRect(x,y,bw,h); ctx.globalAlpha=1;
+    if(v>0){ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='7px Fira Code'; ctx.textAlign='center'; ctx.fillText(fmtK(v),x+bw/2,y-3);}
+    ctx.fillStyle='rgba(255,255,255,.3)'; ctx.font='7px Fira Code'; ctx.textAlign='center';
+    ctx.fillText(labels[i],x+bw/2,canvas.height-8);
+  });
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function set(id,val){const el=document.getElementById(id);if(el) el.textContent=val;}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ═══════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════
+load();
+populateCompSelects();
+renderDiario();
+renderTopbar();
+</script>
+</body>
+</html>

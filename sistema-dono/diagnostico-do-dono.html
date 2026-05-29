@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Diagnóstico do Dono</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow:wght@300;400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0b08;--gold:#d4a843;--gold2:#f5cc5a;--gold3:#8a6620;
+  --goldalpha:rgba(212,168,67,.15);
+  --txt:#ffffff;--txt2:#e0d5c0;--txt3:#b0a080;
+  --card:#141210;--bdr:rgba(212,168,67,.2);--g:#22c55e;--r:#ef4444;--y:#eab308;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--txt);font-family:'Barlow',sans-serif;overflow-x:hidden;}
+
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(12,11,8,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;}
+.tl{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold);}
+.tl span{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--txt3);display:block;margin-top:-2px;}
+.step-indicator{display:flex;align-items:center;gap:6px;}
+.step-pill{display:flex;align-items:center;gap:6px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);padding:4px 10px;border:1px solid rgba(255,255,255,.06);transition:all .3s;}
+.step-pill.active{color:var(--gold);border-color:var(--gold3);background:var(--goldalpha);}
+.step-pill.done{color:var(--txt3);border-color:var(--gold3);text-decoration:line-through;}
+.step-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+
+/* HERO */
+.hero{position:relative;width:100vw;height:100vh;min-height:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(to bottom,rgba(12,11,8,.25) 0%,rgba(12,11,8,.6) 50%,rgba(12,11,8,.97) 100%),url('https://images.unsplash.com/photo-1578357078586-491adf1aa5ba?w=1600&q=80') center/cover no-repeat;}
+.marquee-wrap{position:absolute;top:0;left:0;right:0;z-index:10;background:var(--gold);overflow:hidden;padding:7px 0;}
+.marquee-track{display:flex;white-space:nowrap;animation:marquee 22s linear infinite;}
+.marquee-track span{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#0c0b08;font-weight:500;padding:0 28px;}
+.marquee-track span::before{content:'◆  ';}
+@keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.hero-content{position:relative;z-index:10;padding:0 20px;max-width:860px;}
+.hero-tag{display:inline-block;background:var(--goldalpha);border:1px solid var(--gold3);font-family:'Fira Code',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);padding:8px 20px;margin-bottom:28px;animation:fadeUp .7s ease both;}
+.hero-title{font-family:'Playfair Display',serif;font-size:clamp(46px,9vw,100px);font-weight:900;line-height:.95;color:#fff;margin-bottom:20px;animation:fadeUp .7s .1s ease both;text-shadow:0 4px 32px rgba(0,0,0,.7);}
+.hero-title .gold{color:var(--gold);font-style:italic;display:block;}
+.hero-sub{font-size:clamp(17px,2.5vw,21px);color:var(--txt2);font-weight:300;max-width:600px;margin:0 auto 36px;line-height:1.65;animation:fadeUp .7s .2s ease both;text-shadow:0 2px 12px rgba(0,0,0,.8);}
+.hero-cta{display:inline-flex;align-items:center;gap:12px;background:var(--gold);color:#0c0b08;font-family:'Barlow',sans-serif;font-size:17px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:20px 48px;border:none;cursor:pointer;box-shadow:0 0 40px rgba(212,168,67,.4);transition:all .25s;animation:fadeUp .7s .3s ease both;}
+.hero-cta:hover{background:var(--gold2);transform:translateY(-3px);box-shadow:0 8px 50px rgba(212,168,67,.5);}
+.hero-stats{position:absolute;bottom:0;left:0;right:0;z-index:10;display:flex;background:rgba(12,11,8,.88);backdrop-filter:blur(12px);border-top:1px solid var(--bdr);}
+.hs{flex:1;padding:18px 12px;text-align:center;border-right:1px solid var(--bdr);}
+.hs:last-child{border-right:none;}
+.hs-val{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,36px);color:var(--gold);font-weight:700;line-height:1;}
+.hs-label{font-size:clamp(10px,1.5vw,12px);color:var(--txt3);font-weight:400;margin-top:4px;}
+
+/* STORIES */
+.stories-section{padding:80px 0 60px;overflow:hidden;}
+.stories-header{text-align:center;padding:0 24px;margin-bottom:40px;}
+.sec-eyebrow{font-family:'Fira Code',monospace;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;display:block;}
+.sec-title{font-family:'Playfair Display',serif;font-size:clamp(28px,5vw,52px);color:#fff;font-weight:700;line-height:1.1;}
+.sec-title em{color:var(--gold);font-style:italic;}
+.sec-sub{font-size:17px;color:var(--txt3);margin-top:10px;font-weight:300;line-height:1.6;}
+.scroll-track{display:flex;gap:20px;padding:10px 40px 24px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;cursor:grab;}
+.scroll-track::-webkit-scrollbar{display:none;}
+.scroll-track:active{cursor:grabbing;}
+.story-card{flex-shrink:0;width:clamp(280px,72vw,360px);height:480px;position:relative;overflow:hidden;scroll-snap-align:start;border:1px solid var(--bdr);}
+.story-img{position:absolute;inset:0;background-size:cover;background-position:center top;transition:transform .6s ease;}
+.story-card:hover .story-img{transform:scale(1.06);}
+.story-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(12,11,8,.98) 0%,rgba(12,11,8,.45) 50%,rgba(12,11,8,.05) 100%);}
+.story-content{position:absolute;bottom:0;left:0;right:0;padding:28px 24px;}
+.story-tag{display:inline-block;background:var(--gold);color:#0c0b08;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:500;padding:4px 10px;margin-bottom:12px;}
+.story-title{font-family:'Playfair Display',serif;font-size:22px;color:#fff;font-weight:700;line-height:1.2;margin-bottom:10px;}
+.story-desc{font-size:14px;color:var(--txt2);line-height:1.6;font-weight:300;}
+.story-quote{font-family:'Playfair Display',serif;font-style:italic;font-size:15px;color:var(--gold);margin-top:12px;line-height:1.5;}
+.scroll-dots{display:flex;gap:8px;justify-content:center;margin-top:20px;}
+.sdot{width:6px;height:6px;background:rgba(255,255,255,.15);border-radius:50%;transition:all .3s;cursor:pointer;}
+.sdot.active{width:24px;border-radius:3px;background:var(--gold);}
+
+/* PROBLEMS */
+.problem-section{padding:80px 24px;max-width:1000px;margin:0 auto;}
+.problem-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:48px;}
+.problem-card{background:var(--card);border:1px solid var(--bdr);padding:32px 28px;position:relative;overflow:hidden;transition:border-color .3s,transform .3s;}
+.problem-card:hover{border-color:var(--gold3);transform:translateY(-4px);}
+.problem-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .4s;}
+.problem-card:hover::before{transform:scaleX(1);}
+.pc-icon{font-size:40px;margin-bottom:16px;display:block;}
+.pc-title{font-family:'Playfair Display',serif;font-size:21px;color:#fff;font-weight:700;margin-bottom:10px;line-height:1.2;}
+.pc-desc{font-size:16px;color:var(--txt3);line-height:1.7;font-weight:300;}
+.pc-highlight{margin-top:14px;padding:12px 14px;background:var(--goldalpha);border-left:3px solid var(--gold);font-size:14px;color:var(--gold2);font-style:italic;line-height:1.5;}
+
+/* QUIZ */
+#quiz-section{display:none;min-height:100vh;position:relative;overflow:hidden;}
+#quiz-section.active{display:block;}
+.quiz-bg{position:fixed;inset:0;z-index:0;background:linear-gradient(to bottom,rgba(12,11,8,.88),rgba(12,11,8,.94)),url('https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80') center/cover no-repeat fixed;}
+.quiz-inner{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 20px 40px;}
+.progress-wrap{width:100%;max-width:600px;margin-bottom:32px;}
+.progress-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.pm-label{font-size:14px;color:var(--txt3);font-weight:400;}
+.pm-pct{font-family:'Fira Code',monospace;font-size:14px;color:var(--gold);font-weight:500;}
+.progress-bar{height:3px;background:rgba(255,255,255,.1);border-radius:2px;}
+.progress-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .5s cubic-bezier(.4,0,.2,1);box-shadow:0 0 10px rgba(212,168,67,.6);}
+.q-card{width:100%;max-width:600px;background:rgba(20,18,16,.95);backdrop-filter:blur(20px);border:1px solid var(--bdr);padding:44px 40px;position:relative;overflow:hidden;animation:fadeUp .4s ease both;}
+.q-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold3),var(--gold),var(--gold3));}
+.q-num{font-family:'Fira Code',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold3);margin-bottom:16px;}
+.q-text{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,30px);color:#fff;font-weight:700;line-height:1.25;margin-bottom:32px;}
+.q-text em{color:var(--gold);font-style:italic;}
+.options{display:flex;flex-direction:column;gap:12px;}
+.opt{display:flex;align-items:flex-start;gap:16px;padding:16px 20px;background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.08);color:var(--txt2);cursor:pointer;text-align:left;font-family:'Barlow',sans-serif;font-size:16px;font-weight:400;line-height:1.5;transition:all .2s;width:100%;}
+.opt:hover{border-color:var(--gold3);color:#fff;background:rgba(212,168,67,.06);}
+.opt.selected{border-color:var(--gold);color:#fff;background:rgba(212,168,67,.1);}
+.opt-letter{font-family:'Fira Code',monospace;font-size:11px;letter-spacing:1px;color:var(--gold3);min-width:20px;margin-top:3px;font-weight:500;transition:color .2s;flex-shrink:0;}
+.opt.selected .opt-letter{color:var(--gold);}
+.q-nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;width:100%;max-width:600px;}
+.btn-back{background:none;border:1.5px solid rgba(255,255,255,.15);color:var(--txt3);font-family:'Barlow',sans-serif;font-size:15px;font-weight:600;padding:12px 24px;cursor:pointer;transition:all .2s;}
+.btn-back:hover{border-color:var(--txt3);color:#fff;}
+.btn-next{background:var(--gold);color:#0c0b08;font-family:'Barlow',sans-serif;font-size:16px;font-weight:800;padding:14px 36px;border:none;cursor:pointer;transition:all .2s;opacity:.25;pointer-events:none;}
+.btn-next.ready{opacity:1;pointer-events:all;}
+.btn-next.ready:hover{background:var(--gold2);}
+
+/* LOADING QUIZ */
+#loading-section{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px;position:relative;z-index:10;}
+#loading-section.active{display:flex;}
+.loading-ring{width:110px;height:110px;border:2px solid rgba(212,168,67,.2);border-top-color:var(--gold);border-radius:50%;animation:spin 1.2s linear infinite;margin-bottom:32px;box-shadow:0 0 40px rgba(212,168,67,.15);}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-title{font-family:'Playfair Display',serif;font-size:clamp(24px,4vw,36px);color:#fff;margin-bottom:8px;}
+.loading-title em{color:var(--gold);font-style:italic;}
+.loading-sub{font-family:'Fira Code',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:40px;}
+.loading-steps{display:flex;flex-direction:column;gap:10px;max-width:380px;width:100%;}
+.lstep{display:flex;align-items:center;gap:14px;padding:13px 18px;background:var(--card);border:1px solid rgba(255,255,255,.05);font-size:15px;color:var(--txt3);opacity:0;transform:translateY(8px);transition:all .5s;}
+.lstep.done{color:var(--txt2);border-color:var(--gold3);opacity:1;transform:translateY(0);}
+.lstep-icon{font-size:18px;flex-shrink:0;}
+.loading-bar{width:100%;max-width:380px;height:3px;background:rgba(255,255,255,.06);margin-top:28px;border-radius:2px;overflow:hidden;}
+.loading-fill{height:100%;background:var(--gold);width:0%;transition:width .5s ease;box-shadow:0 0 10px rgba(212,168,67,.5);}
+
+/* RESULTADO QUIZ */
+#result-section{display:none;position:relative;overflow:hidden;}
+#result-section.active{display:block;}
+.result-hero{position:relative;height:60vh;min-height:400px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;}
+.result-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center 20%;}
+.result-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(12,11,8,1) 0%,rgba(12,11,8,.5) 55%,rgba(12,11,8,.15) 100%);}
+.result-hero-content{position:relative;z-index:10;text-align:center;padding:0 20px 50px;width:100%;animation:fadeUp .6s ease both;}
+.rh-eyebrow{font-family:'Fira Code',monospace;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;display:block;}
+.rh-perfil{font-family:'Playfair Display',serif;font-size:clamp(15px,2.5vw,18px);color:var(--txt2);margin-bottom:4px;font-weight:400;}
+.rh-name{font-family:'Playfair Display',serif;font-size:clamp(40px,8vw,80px);color:var(--gold);font-weight:900;line-height:1;text-shadow:0 4px 32px rgba(212,168,67,.3);}
+.code-display{display:inline-flex;flex-direction:column;align-items:center;background:rgba(20,18,16,.9);border:1px solid var(--gold3);padding:14px 28px;margin-top:16px;}
+.code-label{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--txt3);margin-bottom:4px;}
+.code-val{font-family:'Fira Code',monospace;font-size:22px;letter-spacing:6px;color:var(--gold);font-weight:500;}
+.result-body{max-width:700px;margin:0 auto;padding:40px 20px 0;}
+.r-card{background:var(--card);border:1px solid var(--bdr);padding:32px 28px;margin-bottom:20px;position:relative;overflow:hidden;animation:fadeUp .5s ease both;}
+.r-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.r-card-label{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold3);margin-bottom:16px;display:block;}
+.r-card-text{font-size:17px;color:var(--txt2);line-height:1.8;font-weight:300;}
+.r-card-text strong{color:#fff;font-weight:700;}
+.score-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;}
+.sb-label{font-size:14px;color:var(--txt3);margin-bottom:6px;font-weight:400;}
+.sb-track{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
+.sb-fill{height:100%;background:var(--gold);border-radius:3px;width:0%;transition:width 1.2s .3s ease;box-shadow:0 0 8px rgba(212,168,67,.4);}
+.sb-val{font-family:'Fira Code',monospace;font-size:11px;color:var(--gold3);margin-top:4px;}
+.ponto{display:flex;gap:16px;padding:18px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.ponto:last-child{border-bottom:none;}
+.ponto-num{font-family:'Playfair Display',serif;font-size:36px;color:var(--gold3);font-weight:700;line-height:1;flex-shrink:0;min-width:32px;}
+.ponto-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:5px;}
+.ponto-desc{font-size:15px;color:var(--txt3);line-height:1.65;font-weight:300;}
+.modules-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;}
+.mod-card{background:rgba(20,18,16,.8);border:1px solid rgba(255,255,255,.06);padding:20px 18px;position:relative;transition:border-color .2s;}
+.mod-card:hover{border-color:var(--gold3);}
+.mod-icon{font-size:30px;margin-bottom:10px;}
+.mod-title{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:5px;}
+.mod-desc{font-size:13px;color:var(--txt3);line-height:1.5;font-weight:300;}
+.mod-lock{position:absolute;top:14px;right:14px;font-size:14px;opacity:.4;}
+
+/* NEXT STEP */
+.next-step-box{background:linear-gradient(135deg,rgba(212,168,67,.15),rgba(212,168,67,.05));border:1px solid var(--gold3);padding:40px 32px;text-align:center;position:relative;overflow:hidden;margin-bottom:20px;}
+.next-step-box::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(212,168,67,.1),transparent 70%);border-radius:50%;}
+.nsb-step{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold3);margin-bottom:10px;position:relative;z-index:1;}
+.nsb-title{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,32px);color:#fff;font-weight:700;margin-bottom:10px;position:relative;z-index:1;line-height:1.2;}
+.nsb-title em{color:var(--gold);font-style:italic;}
+.nsb-sub{font-size:16px;color:var(--txt3);margin-bottom:28px;line-height:1.65;position:relative;z-index:1;font-weight:300;}
+.nsb-code-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:24px;position:relative;z-index:1;flex-wrap:wrap;}
+.nsb-code-label{font-family:'Fira Code',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);}
+.nsb-code{font-family:'Fira Code',monospace;font-size:16px;letter-spacing:4px;color:var(--gold);background:rgba(212,168,67,.1);border:1px solid var(--gold3);padding:6px 16px;}
+.nsb-cta{display:inline-flex;align-items:center;gap:10px;background:var(--gold);color:#0c0b08;font-family:'Barlow',sans-serif;font-size:17px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:18px 40px;border:none;cursor:pointer;transition:all .25s;position:relative;z-index:1;}
+.nsb-cta:hover{background:var(--gold2);transform:translateY(-2px);box-shadow:0 8px 40px rgba(212,168,67,.4);}
+.nsb-privacy{font-size:12px;color:var(--txt3);margin-top:12px;font-family:'Fira Code',monospace;letter-spacing:1px;position:relative;z-index:1;}
+.urgency-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px;margin-bottom:60px;border:1px solid rgba(34,197,94,.2);background:rgba(34,197,94,.05);}
+.u-dot{width:8px;height:8px;background:var(--g);border-radius:50%;animation:pulse 1.5s infinite;flex-shrink:0;}
+.u-text{font-size:15px;color:var(--txt2);font-weight:400;}
+.u-text strong{color:#fff;}
+
+/* ══════════════════════════════════════════
+   AVALIAÇÃO EMBUTIDA — PASSO 2
+══════════════════════════════════════════ */
+#avaliacao-section{display:none;position:relative;}
+#avaliacao-section.active{display:block;}
+
+.av-header{
+  background:linear-gradient(135deg,rgba(212,168,67,.1),rgba(212,168,67,.02));
+  border-bottom:1px solid var(--bdr);
+  padding:60px 24px 48px;text-align:center;
+}
+.av-header-code{
+  display:inline-flex;align-items:center;gap:10px;
+  background:rgba(212,168,67,.08);border:1px solid var(--gold3);
+  padding:8px 20px;margin-bottom:20px;
+  font-family:'Fira Code',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;
+}
+.av-header-code span{color:var(--gold);font-size:14px;letter-spacing:4px;}
+.av-title{font-family:'Playfair Display',serif;font-size:clamp(28px,5vw,52px);color:#fff;font-weight:700;line-height:1.1;margin-bottom:10px;}
+.av-title em{color:var(--gold);font-style:italic;}
+.av-sub{font-size:17px;color:var(--txt3);font-weight:300;line-height:1.6;}
+
+/* Form meses */
+.av-form{max-width:860px;margin:0 auto;padding:48px 24px;}
+.av-form-title{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:24px;}
+
+/* Month selector */
+.month-selector-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+.month-picker{background:var(--card);border:1px solid rgba(255,255,255,.06);padding:20px;}
+.mp-label{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold3);margin-bottom:8px;}
+.mp-sel{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-bottom:2px solid var(--gold3);color:var(--txt);font-family:'Barlow',sans-serif;font-size:15px;padding:10px 12px;outline:none;cursor:pointer;transition:border-color .2s;}
+.mp-sel:focus{border-bottom-color:var(--gold);}
+.mp-sel option{background:#1a1a1e;color:var(--txt);}
+
+.months-data-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
+.month-card{background:var(--card);border:1px solid rgba(255,255,255,.06);padding:22px 18px;position:relative;transition:border-color .2s;}
+.month-card:focus-within{border-color:var(--gold3);}
+.month-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .3s;}
+.month-card:focus-within::before{transform:scaleX(1);}
+.mc-num{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+.mc-month-name{font-family:'Playfair Display',serif;font-size:18px;color:var(--txt2);margin-bottom:16px;font-style:italic;}
+.inp-group{margin-bottom:12px;}
+.inp-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:4px;font-weight:600;font-family:'Fira Code',monospace;display:block;}
+.inp{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-bottom:2px solid rgba(212,168,67,.2);color:var(--txt);font-family:'Barlow',sans-serif;font-size:16px;padding:9px 12px;outline:none;width:100%;transition:border-color .2s;}
+.inp:focus{border-bottom-color:var(--gold);}
+.inp::placeholder{color:var(--txt3);}
+.mg-preview{font-family:'Fira Code',monospace;font-size:11px;color:var(--txt3);margin-top:4px;min-height:16px;transition:color .2s;}
+.mg-preview.pos{color:var(--g);}
+.mg-preview.neg{color:var(--r);}
+
+.biz-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
+.sector-sel{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-bottom:2px solid rgba(212,168,67,.2);color:var(--txt2);font-family:'Barlow',sans-serif;font-size:16px;padding:10px 12px;outline:none;width:100%;cursor:pointer;transition:border-color .2s;}
+.sector-sel:focus{border-bottom-color:var(--gold);}
+.sector-sel option{background:#1a1a1e;color:var(--txt);}
+.btn-analyse{width:100%;background:var(--gold);color:#0c0b08;font-family:'Barlow',sans-serif;font-size:18px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:20px;border:none;cursor:pointer;transition:all .25s;box-shadow:0 0 32px rgba(212,168,67,.2);}
+.btn-analyse:hover{background:var(--gold2);box-shadow:0 4px 40px rgba(212,168,67,.4);}
+
+/* LOADING ANÁLISE */
+#loading-av{display:none;min-height:60vh;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:60px 24px;}
+#loading-av.active{display:flex;}
+.lav-orb{width:100px;height:100px;border:1px solid var(--bdr);border-top:2px solid var(--gold);border-radius:50%;animation:spin 1.2s linear infinite;margin-bottom:28px;box-shadow:0 0 48px rgba(212,168,67,.12);}
+.lav-title{font-family:'Playfair Display',serif;font-size:clamp(20px,4vw,32px);color:#fff;margin-bottom:6px;}
+.lav-title em{color:var(--gold);font-style:italic;}
+.lav-sub{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:32px;}
+.lav-steps{display:flex;flex-direction:column;gap:8px;max-width:340px;width:100%;}
+.lav-step{display:flex;align-items:center;gap:12px;padding:11px 16px;background:var(--card);border:1px solid rgba(255,255,255,.04);font-size:14px;color:var(--txt3);opacity:0;transform:translateX(-8px);transition:all .5s;}
+.lav-step.on{color:var(--txt2);border-color:var(--gold3);opacity:1;transform:translateX(0);}
+.lav-bar-wrap{width:100%;max-width:340px;height:2px;background:rgba(255,255,255,.05);margin-top:20px;border-radius:1px;overflow:hidden;}
+.lav-bar{height:100%;background:var(--gold);width:0%;transition:width .4s ease;}
+
+/* RESULTADO ANÁLISE */
+#result-av{display:none;padding-bottom:60px;}
+#result-av.active{display:block;}
+
+/* Score band */
+.score-band{background:linear-gradient(135deg,var(--card),var(--bg));border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);padding:48px 24px;display:flex;align-items:center;justify-content:center;gap:56px;flex-wrap:wrap;text-align:center;position:relative;overflow:hidden;}
+.score-band::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:500px;height:280px;background:radial-gradient(ellipse,rgba(212,168,67,.06),transparent 70%);pointer-events:none;}
+.sb-main{position:relative;z-index:1;}
+.sb-score-lbl{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px;}
+.sb-score{font-family:'Playfair Display',serif;font-size:clamp(64px,12vw,110px);font-weight:900;line-height:1;color:var(--gold);}
+.sb-max{font-family:'Fira Code',monospace;font-size:12px;color:var(--txt3);}
+.sb-verdict{font-family:'Barlow',sans-serif;font-size:18px;letter-spacing:1px;text-transform:uppercase;margin-top:6px;font-weight:800;}
+.sb-metrics{display:flex;flex-direction:column;gap:18px;position:relative;z-index:1;}
+.sbm{display:flex;flex-direction:column;gap:3px;min-width:150px;}
+.sbm-lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt3);font-family:'Fira Code',monospace;}
+.sbm-val{font-family:'Playfair Display',serif;font-size:26px;color:var(--txt);font-weight:700;}
+.sbm-delta{font-size:12px;font-weight:600;}
+.sbm-delta.up{color:var(--g);}
+.sbm-delta.dn{color:var(--r);}
+
+/* Result cards */
+.av-result-body{max-width:860px;margin:0 auto;padding:40px 24px 0;}
+.rsec{margin-bottom:36px;}
+.rsec-head{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.05);}
+.rsec-title{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--txt3);}
+.badge-free{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;background:rgba(34,197,94,.1);color:var(--g);border:1px solid rgba(34,197,94,.2);}
+.badge-lock{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;background:rgba(212,168,67,.1);color:var(--gold);border:1px solid rgba(212,168,67,.2);}
+.badge-ai{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.2);}
+
+.metrics-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.mcard{background:var(--card);border:1px solid rgba(255,255,255,.05);padding:18px 14px;position:relative;overflow:hidden;}
+.mcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.mcard.g::before{background:var(--g);}
+.mcard.r::before{background:var(--r);}
+.mcard.y::before{background:var(--y);}
+.mcard.n::before{background:var(--gold);}
+.mc-lbl{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px;}
+.mc-val{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;line-height:1;color:var(--txt);}
+.mc-sub{font-size:11px;color:var(--txt3);margin-top:4px;}
+
+.chart-box{background:var(--card);border:1px solid rgba(255,255,255,.05);padding:22px;margin-bottom:20px;}
+.chart-title{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:14px;}
+canvas{display:block;width:100%;}
+
+.insight-card{background:var(--card);border:1px solid rgba(255,255,255,.05);padding:20px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start;border-left:3px solid transparent;}
+.insight-card.warn{border-left-color:var(--y);}
+.insight-card.good{border-left-color:var(--g);}
+.insight-card.crit{border-left-color:var(--r);}
+.insight-card.ai{border-left-color:#7c3aed;}
+.ic-icon{font-size:22px;flex-shrink:0;margin-top:2px;}
+.ic-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;}
+.ic-desc{font-size:14px;color:var(--txt3);line-height:1.65;font-weight:300;}
+
+/* AI insight typing animation */
+.typing-cursor::after{content:'▋';animation:blink .7s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+/* PAYWALL */
+.paywall-divider{position:relative;margin:40px 0 0;display:flex;align-items:center;justify-content:center;}
+.pd-line{flex:1;height:1px;background:linear-gradient(to right,transparent,var(--bdr),transparent);}
+.pd-tag{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold3);background:var(--bg);padding:4px 12px;border:1px solid var(--gold3);display:inline-block;margin:0 20px;}
+
+.blurred-section{position:relative;padding:0 24px 40px;max-width:860px;margin:0 auto;}
+.blur-content{filter:blur(7px);pointer-events:none;user-select:none;opacity:.65;}
+.paywall-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(12,11,8,0) 0%,rgba(12,11,8,.65) 18%,rgba(12,11,8,.98) 40%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:40px 24px 48px;z-index:10;}
+.pw-inner{max-width:560px;width:100%;text-align:center;}
+.pw-lock{font-size:48px;margin-bottom:18px;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.pw-title{font-family:'Playfair Display',serif;font-size:clamp(24px,5vw,40px);color:#fff;font-weight:700;margin-bottom:10px;line-height:1.15;}
+.pw-title em{color:var(--gold);font-style:italic;}
+.pw-sub{font-size:16px;color:var(--txt2);margin-bottom:24px;line-height:1.7;font-weight:300;}
+.pw-locked-items{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;text-align:left;}
+.pwli{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.15);font-size:13px;color:var(--txt2);}
+.pwli-icon{font-size:15px;flex-shrink:0;}
+
+/* PLANS */
+.plans-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+.plan-card{background:rgba(212,168,67,.06);border:1px solid var(--gold3);padding:24px;text-align:center;position:relative;cursor:pointer;transition:all .25s;}
+.plan-card:hover,.plan-card.selected{background:rgba(212,168,67,.12);border-color:var(--gold);}
+.plan-rec-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--gold);color:#0c0b08;font-family:'Fira Code',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:3px 12px;font-weight:600;white-space:nowrap;}
+.plan-period{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold3);margin-bottom:8px;}
+.plan-price{font-family:'Playfair Display',serif;font-size:clamp(30px,5vw,46px);color:var(--gold);font-weight:900;line-height:1;}
+.plan-currency{font-size:14px;color:var(--txt3);}
+.plan-renewal{font-family:'Fira Code',monospace;font-size:10px;color:var(--txt3);margin-top:6px;letter-spacing:1px;}
+.plan-savings{font-size:12px;color:var(--g);margin-top:4px;font-weight:600;}
+.plan-desc{font-size:13px;color:var(--txt3);margin-top:10px;line-height:1.5;font-weight:300;}
+
+.pw-cta{width:100%;background:var(--gold);color:#0c0b08;font-family:'Barlow',sans-serif;font-size:18px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:20px;border:none;cursor:pointer;transition:all .25s;box-shadow:0 0 40px rgba(212,168,67,.3);margin-bottom:12px;}
+.pw-cta:hover{background:var(--gold2);transform:translateY(-2px);box-shadow:0 8px 48px rgba(212,168,67,.5);}
+.pw-guarantee{font-size:12px;color:var(--txt3);font-family:'Fira Code',monospace;letter-spacing:1px;}
+.pw-urgency{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;padding:12px 20px;background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.15);}
+.urg-dot{width:7px;height:7px;background:var(--g);border-radius:50%;animation:pulse 1.5s infinite;flex-shrink:0;}
+.urg-text{font-size:13px;color:var(--txt2);}
+.urg-text strong{color:#fff;}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal{background:#1a1810;border:1px solid var(--bdr);padding:36px;max-width:460px;width:100%;position:relative;}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.modal-plan-badge{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);background:rgba(212,168,67,.1);border:1px solid var(--gold3);padding:5px 14px;display:inline-block;margin-bottom:14px;}
+.modal-title{font-family:'Playfair Display',serif;font-size:26px;color:#fff;margin-bottom:6px;}
+.modal-title em{color:var(--gold);font-style:italic;}
+.modal-sub{font-size:14px;color:var(--txt3);margin-bottom:24px;line-height:1.6;font-weight:300;}
+.modal-fields{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+.modal-inp{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-bottom:2px solid rgba(212,168,67,.2);color:#fff;font-family:'Barlow',sans-serif;font-size:16px;padding:14px 16px;outline:none;width:100%;transition:border-color .2s;}
+.modal-inp:focus{border-bottom-color:var(--gold);}
+.modal-inp::placeholder{color:var(--txt3);}
+.modal-submit{width:100%;background:var(--gold);color:#0c0b08;font-family:'Barlow',sans-serif;font-size:18px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:16px;border:none;cursor:pointer;transition:all .2s;}
+.modal-submit:hover{background:var(--gold2);}
+.modal-cancel{width:100%;background:none;border:none;color:var(--txt3);font-family:'Fira Code',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:10px;cursor:pointer;margin-top:6px;}
+.modal-cancel:hover{color:var(--txt2);}
+
+/* SUCCESS */
+#success-overlay{position:fixed;inset:0;z-index:500;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;}
+#success-overlay.active{display:flex;}
+.sov-ring{width:90px;height:90px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:24px;animation:pop .5s ease both;box-shadow:0 0 40px rgba(212,168,67,.25);}
+.sov-title{font-family:'Playfair Display',serif;font-size:clamp(26px,5vw,42px);color:#fff;margin-bottom:10px;}
+.sov-title em{color:var(--gold);font-style:italic;}
+.sov-sub{font-size:16px;color:var(--txt3);max-width:440px;line-height:1.7;font-weight:300;margin-bottom:8px;}
+.sov-note{font-size:14px;color:var(--txt2);max-width:440px;line-height:1.6;margin-bottom:28px;}
+.sov-code-label{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px;}
+.sov-code{font-family:'Fira Code',monospace;font-size:18px;letter-spacing:4px;background:var(--card);border:1px solid var(--gold3);padding:14px 28px;color:var(--gold);display:inline-block;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
+@keyframes pop{0%{transform:scale(0);}70%{transform:scale(1.1);}100%{transform:scale(1);}}
+
+@media(max-width:640px){
+  .hs{min-width:50%;}
+  .q-card{padding:28px 16px;}
+  .opt{font-size:15px;padding:14px 14px;}
+  .modules-grid,.score-grid,.biz-row{grid-template-columns:1fr;}
+  .month-selector-grid,.months-data-grid{grid-template-columns:1fr;}
+  .metrics-4{grid-template-columns:repeat(2,1fr);}
+  .pw-locked-items,.plans-grid{grid-template-columns:1fr;}
+  .r-card,.next-step-box{padding:22px 16px;}
+  .av-form,.av-result-body,.blurred-section{padding-left:14px;padding-right:14px;}
+  .score-band{gap:28px;}
+  .sbm{min-width:120px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tl">Sistema do Dono<span>diagnóstico · avaliação</span></div>
+  <div class="step-indicator">
+    <div class="step-pill active" id="pill1"><div class="step-dot"></div>Diagnóstico</div>
+    <div class="step-pill" id="pill2"><div class="step-dot"></div>Avaliação</div>
+    <div class="step-pill" id="pill3"><div class="step-dot"></div>Acesso</div>
+  </div>
+</div>
+
+<!-- ══ HERO ══ -->
+<section class="hero" id="hero-section">
+  <div class="hero-bg"></div>
+  <div class="marquee-wrap"><div class="marquee-track">
+    <span>Diagnóstico do Dono</span><span>Descobre os teus pontos cegos</span><span>Toma decisões com dados</span><span>Angola · África · Empreendedores</span>
+    <span>Diagnóstico do Dono</span><span>Descobre os teus pontos cegos</span><span>Toma decisões com dados</span><span>Angola · África · Empreendedores</span>
+  </div></div>
+  <div class="hero-content">
+    <div class="hero-tag">Ferramenta gratuita · 3 minutos</div>
+    <h1 class="hero-title">O teu negócio<br><span class="gold">tem pontos cegos.</span></h1>
+    <p class="hero-sub">Em 7 perguntas descobrimos exactamente onde estás a perder dinheiro — e o plano para os próximos 30 dias.</p>
+    <button class="hero-cta" onclick="startQuiz()">Fazer o diagnóstico &nbsp;→</button>
+  </div>
+  <div class="hero-stats">
+    <div class="hs"><div class="hs-val">847+</div><div class="hs-label">Donos diagnosticados</div></div>
+    <div class="hs"><div class="hs-val">4</div><div class="hs-label">Perfis de negócio</div></div>
+    <div class="hs"><div class="hs-val">91%</div><div class="hs-label">Reconheceram o problema</div></div>
+    <div class="hs"><div class="hs-val">3 min</div><div class="hs-label">Para o resultado</div></div>
+  </div>
+</section>
+
+<!-- ══ STORIES ══ -->
+<section class="stories-section" id="main-content">
+  <div class="stories-header">
+    <span class="sec-eyebrow">Reconheces-te?</span>
+    <h2 class="sec-title">São histórias <em>reais.</em><br>Talvez a tua.</h2>
+    <p class="sec-sub">Desliza para ver os perfis mais comuns entre donos em Angola.</p>
+  </div>
+  <div class="scroll-track" id="scroll-track">
+    <div class="story-card"><div class="story-img" style="background-image:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80')"></div><div class="story-overlay"></div><div class="story-content"><div class="story-tag">Comércio · Luanda</div><div class="story-title">Quando o fretista parou, o negócio parou também.</div><div class="story-desc">Um ponto de falha único que custa dias inteiros de receita.</div><div class="story-quote">"Só percebi o risco quando já era tarde."</div></div></div>
+    <div class="story-card"><div class="story-img" style="background-image:url('https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&q=80')"></div><div class="story-overlay"></div><div class="story-content"><div class="story-tag">Distribuição · Viana</div><div class="story-title">O dinheiro entrava. Mas onde ia, ninguém sabia.</div><div class="story-desc">Receita sem controlo é como água numa peneira.</div><div class="story-quote">"Trabalhava muito mais, mas ficava com menos."</div></div></div>
+    <div class="story-card"><div class="story-img" style="background-image:url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80')"></div><div class="story-overlay"></div><div class="story-content"><div class="story-tag">Retalho · Talatona</div><div class="story-title">Tinha ajuda. Mas continuava a fazer tudo sozinha.</div><div class="story-desc">Contratar sem delegar é pagar dois salários.</div><div class="story-quote">"A equipa existia. O sistema não."</div></div></div>
+    <div class="story-card"><div class="story-img" style="background-image:url('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&q=80')"></div><div class="story-overlay"></div><div class="story-content"><div class="story-tag">Serviços · Luanda Sul</div><div class="story-title">Sabia o que mudar. Não sabia por onde começar.</div><div class="story-desc">Diagnóstico certo sem plano certo é frustração.</div><div class="story-quote">"Tinha o mapa. Faltava a bússola."</div></div></div>
+    <div class="story-card"><div class="story-img" style="background-image:url('https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&q=80')"></div><div class="story-overlay"></div><div class="story-content"><div class="story-tag">Grossista · Malanje</div><div class="story-title">Cresceu rápido. E perdeu o controlo mais rápido ainda.</div><div class="story-desc">Volume não é lucro — é risco mal gerido.</div><div class="story-quote">"Quanto mais vendia, mais me sentia perdido."</div></div></div>
+  </div>
+  <div class="scroll-dots" id="scroll-dots">
+    <div class="sdot active" onclick="scrollToCard(0)"></div><div class="sdot" onclick="scrollToCard(1)"></div><div class="sdot" onclick="scrollToCard(2)"></div><div class="sdot" onclick="scrollToCard(3)"></div><div class="sdot" onclick="scrollToCard(4)"></div>
+  </div>
+</section>
+
+<!-- ══ PROBLEMS ══ -->
+<section class="problem-section" id="problem-section">
+  <div style="text-align:center;">
+    <span class="sec-eyebrow">Porque isto acontece</span>
+    <h2 class="sec-title">Os 3 pontos cegos<br>que mais <em>custam.</em></h2>
+  </div>
+  <div class="problem-grid">
+    <div class="problem-card"><span class="pc-icon">🔗</span><div class="pc-title">Ponto de falha único</div><div class="pc-desc">Um fornecedor, um veículo, um colaborador — e o negócio para. Não é azar. É estrutura.</div><div class="pc-highlight">"Quando o fretista parou, perdi dias inteiros."</div></div>
+    <div class="problem-card"><span class="pc-icon">💸</span><div class="pc-title">Dinheiro sem destino</div><div class="pc-desc">Sem separação financeira, o caixa e o teu bolso misturam-se. O que sobra some sem explicação.</div><div class="pc-highlight">"Sabia que tinha receita. Não sabia onde estava."</div></div>
+    <div class="problem-card"><span class="pc-icon">🌑</span><div class="pc-title">Decisões na escuridão</div><div class="pc-desc">Sem dados, decides pelo que sentes — não pelo que realmente está a acontecer.</div><div class="pc-highlight">"Achava que ia bem. Os números diziam outra coisa."</div></div>
+  </div>
+  <div style="text-align:center;margin-top:56px;">
+    <p style="font-size:18px;color:var(--txt2);margin-bottom:28px;font-weight:300;line-height:1.6;">O diagnóstico diz-te <strong style="color:#fff;">qual é o teu caso específico</strong> e gera o teu código de perfil.</p>
+    <button class="hero-cta" onclick="startQuiz()" style="display:inline-flex;">Iniciar diagnóstico &nbsp;→</button>
+  </div>
+</section>
+
+<!-- ══ QUIZ ══ -->
+<section id="quiz-section">
+  <div class="quiz-bg"></div>
+  <div class="quiz-inner">
+    <div class="progress-wrap">
+      <div class="progress-meta"><span class="pm-label" id="q-label">Pergunta 1 de 7</span><span class="pm-pct" id="q-pct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="q-card" id="q-card">
+      <div class="q-num" id="q-num">01 / 07</div>
+      <div class="q-text" id="q-text"></div>
+      <div class="options" id="q-options"></div>
+    </div>
+    <div class="q-nav">
+      <button class="btn-back" id="btn-back" onclick="prevQ()" style="visibility:hidden">← Voltar</button>
+      <button class="btn-next" id="btn-next" onclick="nextQ()">Continuar →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══ LOADING QUIZ ══ -->
+<div id="loading-section" style="background:var(--bg);">
+  <div class="loading-ring"></div>
+  <div class="loading-title">A gerar o teu <em>perfil</em></div>
+  <div class="loading-sub">analisando 47 variáveis de gestão</div>
+  <div class="loading-steps">
+    <div class="lstep" id="ls1"><span class="lstep-icon">🔍</span>Identificar padrões de gestão</div>
+    <div class="lstep" id="ls2"><span class="lstep-icon">💰</span>Calcular pontos cegos financeiros</div>
+    <div class="lstep" id="ls3"><span class="lstep-icon">⚠️</span>Mapear riscos operacionais</div>
+    <div class="lstep" id="ls4"><span class="lstep-icon">🔑</span>Gerar código de perfil único</div>
+  </div>
+  <div class="loading-bar"><div class="loading-fill" id="loading-fill"></div></div>
+</div>
+
+<!-- ══ RESULTADO QUIZ ══ -->
+<section id="result-section">
+  <div class="result-hero">
+    <div class="result-hero-bg" id="result-bg"></div>
+    <div class="result-hero-overlay"></div>
+    <div class="result-hero-content">
+      <span class="rh-eyebrow">Diagnóstico concluído · Passo 1 de 3</span>
+      <div class="rh-perfil">O teu perfil de dono é:</div>
+      <div class="rh-name" id="result-name">—</div>
+      <div class="code-display">
+        <div class="code-label">O teu código de perfil</div>
+        <div class="code-val" id="result-code">DONO-????</div>
+      </div>
+    </div>
+  </div>
+  <div class="result-body">
+    <div class="r-card"><span class="r-card-label">O que isto significa</span><div class="r-card-text" id="result-desc">—</div><div class="score-grid" id="score-grid"></div></div>
+    <div class="r-card" style="animation-delay:.1s"><span class="r-card-label">Os teus 3 pontos críticos</span><div id="result-pontos"></div></div>
+    <div class="r-card" style="animation-delay:.2s"><span class="r-card-label">O teu plano — módulos a desbloquear</span><div class="modules-grid" id="modules-grid"></div></div>
+    <div class="next-step-box">
+      <div class="nsb-step">// passo 2 de 3 — avaliação dos últimos 3 meses</div>
+      <h3 class="nsb-title">Agora vê o que os<br>teus <em>números revelam.</em></h3>
+      <p class="nsb-sub">Insere os dados dos últimos 3 meses. O sistema analisa e mostra exactamente onde estás a perder margem — com o apoio de análise inteligente.</p>
+      <div class="nsb-code-row">
+        <span class="nsb-code-label">O teu código:</span>
+        <span class="nsb-code" id="nsb-code-display">DONO-????</span>
+      </div>
+      <button class="nsb-cta" onclick="goToAvaliacao()">Analisar os meus 3 meses &nbsp;→</button>
+      <div class="nsb-privacy">// gratuito · 2 minutos · análise inteligente incluída</div>
+    </div>
+    <div class="urgency-bar">
+      <div class="u-dot"></div>
+      <div class="u-text"><strong id="urgency-num">14</strong> donos a fazer a avaliação agora</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     AVALIAÇÃO EMBUTIDA — PASSO 2
+══════════════════════════════════ -->
+<section id="avaliacao-section">
+  <div class="av-header">
+    <div class="av-header-code">Código: <span id="av-code-display">—</span></div>
+    <h2 class="av-title">Avaliação dos<br><em>3 meses</em></h2>
+    <p class="av-sub">Escolhe os meses e insere os dados do teu negócio.</p>
+  </div>
+
+  <div class="av-form">
+    <div class="av-form-title">// escolhe os 3 meses a analisar</div>
+    <div class="month-selector-grid">
+      <div class="month-picker">
+        <div class="mp-label">1º Mês</div>
+        <select class="mp-sel" id="sel-m1" onchange="updateMonthName(0)"></select>
+      </div>
+      <div class="month-picker">
+        <div class="mp-label">2º Mês</div>
+        <select class="mp-sel" id="sel-m2" onchange="updateMonthName(1)"></select>
+      </div>
+      <div class="month-picker">
+        <div class="mp-label">3º Mês</div>
+        <select class="mp-sel" id="sel-m3" onchange="updateMonthName(2)"></select>
+      </div>
+    </div>
+
+    <div class="av-form-title">// dados financeiros por mês</div>
+    <div class="months-data-grid" id="months-data-grid"></div>
+
+    <div class="av-form-title">// sobre o negócio</div>
+    <div class="biz-row">
+      <div class="inp-group">
+        <label class="inp-label">Nome da empresa</label>
+        <input type="text" class="inp" id="biz-nome" placeholder="Ex: Distribuidora Lda">
+      </div>
+      <div class="inp-group">
+        <label class="inp-label">Sector</label>
+        <select class="sector-sel" id="biz-sector">
+          <option value="comercio">Comércio / Distribuição</option>
+          <option value="retalhista">Retalhista</option>
+          <option value="servicos">Serviços</option>
+          <option value="producao">Produção / Manufactura</option>
+          <option value="alimentacao">Alimentação / Restauração</option>
+          <option value="construcao">Construção</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="inp-group">
+        <label class="inp-label">Nº de colaboradores</label>
+        <input type="number" class="inp" id="biz-colab" placeholder="Ex: 3" min="0">
+      </div>
+      <div class="inp-group">
+        <label class="inp-label">Meta mensal de margem (Kz)</label>
+        <input type="number" class="inp" id="biz-meta" placeholder="Ex: 150000">
+      </div>
+    </div>
+
+    <button class="btn-analyse" onclick="runAnalysis()">
+      Analisar os meus 3 meses &nbsp;→
+    </button>
+  </div>
+</section>
+
+<!-- ══ LOADING ANÁLISE ══ -->
+<div id="loading-av">
+  <div class="lav-orb"></div>
+  <div class="lav-title">A analisar o teu <em>negócio</em></div>
+  <div class="lav-sub">análise inteligente em curso</div>
+  <div class="lav-steps">
+    <div class="lav-step" id="lav1">📊 Calcular indicadores financeiros</div>
+    <div class="lav-step" id="lav2">📈 Analisar tendências dos 3 meses</div>
+    <div class="lav-step" id="lav3">🔍 Identificar pontos críticos</div>
+    <div class="lav-step" id="lav4">🤖 Gerar análise inteligente personalizada</div>
+    <div class="lav-step" id="lav5">📋 Preparar plano de acção</div>
+  </div>
+  <div class="lav-bar-wrap"><div class="lav-bar" id="lav-bar"></div></div>
+</div>
+
+<!-- ══ RESULTADO ANÁLISE ══ -->
+<div id="result-av">
+  <div class="score-band">
+    <div class="sb-main">
+      <div class="sb-score-lbl">Score de saúde</div>
+      <div class="sb-score" id="sb-score">—</div>
+      <div class="sb-max">/100</div>
+      <div class="sb-verdict" id="sb-verdict">—</div>
+    </div>
+    <div class="sb-metrics">
+      <div class="sbm"><div class="sbm-lbl">Receita total</div><div class="sbm-val" id="sm-rec">—</div><div class="sbm-delta" id="sm-rec-d">—</div></div>
+      <div class="sbm"><div class="sbm-lbl">Margem total</div><div class="sbm-val" id="sm-mg">—</div><div class="sbm-delta" id="sm-mg-d">—</div></div>
+      <div class="sbm"><div class="sbm-lbl">Margem média %</div><div class="sbm-val" id="sm-avg">—</div><div class="sbm-delta" id="sm-avg-d">—</div></div>
+    </div>
+  </div>
+
+  <div class="av-result-body">
+    <div class="rsec">
+      <div class="rsec-head"><div class="rsec-title">Indicadores principais</div><div class="badge-free">✓ Visível</div></div>
+      <div class="metrics-4" id="metrics-grid"></div>
+    </div>
+    <div class="rsec">
+      <div class="rsec-head"><div class="rsec-title">Evolução dos 3 meses</div><div class="badge-free">✓ Visível</div></div>
+      <div class="chart-box"><div class="chart-title">Receita vs Margem — evolução mensal</div><canvas id="chart-evolucao" height="160"></canvas></div>
+    </div>
+    <div class="rsec">
+      <div class="rsec-head"><div class="rsec-title">Primeiros insights</div><div class="badge-free">✓ Visível</div></div>
+      <div id="insights-free"></div>
+    </div>
+    <div class="rsec">
+      <div class="rsec-head"><div class="rsec-title">Análise inteligente</div><div class="badge-ai">⚡ IA activa</div></div>
+      <div class="insight-card ai" id="ai-insight-card">
+        <div class="ic-icon">🤖</div>
+        <div style="flex:1;">
+          <div class="ic-title">A analisar os teus dados…</div>
+          <div class="ic-desc typing-cursor" id="ai-insight-text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYWALL -->
+  <div class="paywall-divider">
+    <div class="pd-line"></div>
+    <div class="pd-tag">// análise completa bloqueada</div>
+    <div class="pd-line"></div>
+  </div>
+
+  <div class="blurred-section">
+    <div class="blur-content">
+      <div class="rsec" style="margin-top:32px;">
+        <div class="rsec-head"><div class="rsec-title">Diagnóstico detalhado por mês</div><div class="badge-lock">🔒 Bloqueado</div></div>
+        <div class="metrics-4">
+          <div class="mcard r"><div class="mc-lbl">Mês crítico</div><div class="mc-val" id="bl-crit">—</div><div class="mc-sub">maior queda</div></div>
+          <div class="mcard g"><div class="mc-lbl">Melhor mês</div><div class="mc-val" id="bl-best">—</div><div class="mc-sub">pico de desempenho</div></div>
+          <div class="mcard y"><div class="mc-lbl">Variação margem</div><div class="mc-val" id="bl-var">—</div><div class="mc-sub">entre meses</div></div>
+          <div class="mcard n"><div class="mc-lbl">Projecção mês 4</div><div class="mc-val" id="bl-proj">—</div><div class="mc-sub">se mantiver ritmo</div></div>
+        </div>
+      </div>
+      <div class="rsec">
+        <div class="rsec-head"><div class="rsec-title">Pontos críticos identificados</div><div class="badge-lock">🔒 Bloqueado</div></div>
+        <div class="insight-card crit"><div class="ic-icon">🔴</div><div><div class="ic-title">Ponto crítico #1</div><div class="ic-desc">████████████████████████████████████████████████</div></div></div>
+        <div class="insight-card warn"><div class="ic-icon">🟡</div><div><div class="ic-title">Ponto crítico #2</div><div class="ic-desc">████████████████████████████████████████████████</div></div></div>
+        <div class="insight-card good"><div class="ic-icon">🟢</div><div><div class="ic-title">Oportunidade detectada</div><div class="ic-desc">████████████████████████████████████████████████</div></div></div>
+      </div>
+      <div class="rsec">
+        <div class="rsec-head"><div class="rsec-title">Análise IA completa + Plano 30 dias</div><div class="badge-lock">🔒 Bloqueado</div></div>
+        <div class="insight-card ai"><div class="ic-icon">🤖</div><div><div class="ic-title">Análise completa personalizada</div><div class="ic-desc">████████████████████████████████████████████████████████████████</div></div></div>
+        <div class="insight-card"><div class="ic-icon">📋</div><div><div class="ic-title">Acção prioritária #1</div><div class="ic-desc">████████████████████████████████████████████████</div></div></div>
+        <div class="insight-card"><div class="ic-icon">🚀</div><div><div class="ic-title">Projecção com melhorias</div><div class="ic-desc">████████████████████████████████████████████████</div></div></div>
+      </div>
+    </div>
+
+    <div class="paywall-overlay">
+      <div class="pw-inner">
+        <div class="pw-lock">🔒</div>
+        <h3 class="pw-title">A análise está<br><em>quase completa.</em></h3>
+        <p class="pw-sub">Identificámos <strong id="pw-prob">3 pontos críticos</strong> no teu negócio. Desbloqueia para ver tudo — incluindo a análise completa da IA e o plano de acção.</p>
+        <div class="pw-locked-items">
+          <div class="pwli"><span class="pwli-icon">📊</span>Diagnóstico detalhado mês a mês</div>
+          <div class="pwli"><span class="pwli-icon">🎯</span>Pontos críticos com causa raiz</div>
+          <div class="pwli"><span class="pwli-icon">🤖</span>Análise IA completa e personalizada</div>
+          <div class="pwli"><span class="pwli-icon">📈</span>Projecção para os próximos 3 meses</div>
+          <div class="pwli"><span class="pwli-icon">📋</span>Plano de acção — 30 dias</div>
+          <div class="pwli"><span class="pwli-icon">🖥️</span>Acesso ao Sistema do Dono completo</div>
+        </div>
+        <div class="plans-grid">
+          <div class="plan-card" id="plan-trim" onclick="selectPlan('trimestral')">
+            <div class="plan-period">Trimestral</div>
+            <div class="plan-price">9.900 <span class="plan-currency">Kz</span></div>
+            <div class="plan-renewal">renova a cada 3 meses</div>
+            <div class="plan-desc">Todos os sistemas + suporte WhatsApp</div>
+          </div>
+          <div class="plan-card selected" id="plan-anual" onclick="selectPlan('anual')">
+            <div class="plan-rec-tag">⭐ Mais popular</div>
+            <div class="plan-period">Anual</div>
+            <div class="plan-price">22.000 <span class="plan-currency">Kz</span></div>
+            <div class="plan-renewal">renova anualmente</div>
+            <div class="plan-savings">Poupas 17.600 Kz/ano</div>
+            <div class="plan-desc">Tudo + relatório trimestral personalizado</div>
+          </div>
+        </div>
+        <button class="pw-cta" onclick="openModal()">Desbloquear análise completa &nbsp;→</button>
+        <div class="pw-guarantee">// garantia de 7 dias — se não ajudar, devolvemos</div>
+        <div class="pw-urgency"><div class="urg-dot"></div><div class="urg-text"><strong id="urg-num">11</strong> empresários desbloquearam esta semana</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-plan-badge" id="modal-plan-badge">Plano Anual · 22.000 Kz</div>
+    <div class="modal-title">Receber o <em>acesso</em></div>
+    <div class="modal-sub">Deixa o teu contacto. Recebes o link de pagamento e o acesso aos sistemas directamente no WhatsApp.</div>
+    <div class="modal-fields">
+      <input type="text" class="modal-inp" id="lead-nome" placeholder="O teu nome">
+      <input type="tel" class="modal-inp" id="lead-tel" placeholder="WhatsApp (+244 9xx xxx xxx)">
+    </div>
+    <button class="modal-submit" onclick="submitLead()">Confirmar e receber acesso →</button>
+    <button class="modal-cancel" onclick="closeModal()">agora não</button>
+  </div>
+</div>
+
+<!-- ══ SUCCESS ══ -->
+<div id="success-overlay">
+  <div class="sov-ring">✓</div>
+  <div class="sov-title">Pedido <em>recebido.</em></div>
+  <div class="sov-sub">Vais receber o link de pagamento no WhatsApp em breve.</div>
+  <div class="sov-note">Após o pagamento, o teu acesso ao <strong>Sistema do Dono</strong>, <strong>Análise</strong> e <strong>Pontos Cegos</strong> é activado imediatamente.</div>
+  <div class="sov-code-label">O teu código de acesso</div>
+  <div class="sov-code" id="sov-code">ACC-0000</div>
+</div>
+
+<script>
+// ══════════════════════════════════
+// DADOS
+// ══════════════════════════════════
+const MESES_PT=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const WA_NUMBER='244928708281';
+
+const Q=[
+  {t:'Como <em>describes</em> a tua relação com o teu negócio hoje?',o:['Sou eu que faço tudo — sem mim, o negócio para.','Tenho ajuda, mas dependo muito de mim ainda.','Tenho uma equipa, mas perco tempo a gerir tudo.','O negócio funciona mesmo quando não estou.'],s:[0,1,2,3]},
+  {t:'Quando olhas para o teu <em>dinheiro no fim do mês</em>, o que vês?',o:['Nunca sobra — pago contas e não percebo onde foi.','Às vezes sobra, mas não é consistente.','Separo alguma coisa, mas sem sistema definido.','Tenho contas separadas e sei para onde vai cada kwanza.'],s:[0,1,2,3]},
+  {t:'Qual é o teu maior <em>medo operacional</em> agora?',o:['Que um fornecedor falhe e eu não consiga entregar.','Que o meu colaborador saia e não haja substituto.','Que o mercado mude e eu não tenha dados para reagir.','Que cresça depressa demais e perca o controlo.'],s:[0,0,1,2]},
+  {t:'Com que frequência tomas decisões com base em <em>dados reais</em>?',o:['Quase nunca — vou pelo que sinto e pela experiência.','Às vezes, quando me lembro de ver os números.','Regularmente, mas os dados não estão organizados.','Sempre — tenho sistemas que mostram o que acontece.'],s:[0,1,2,3]},
+  {t:'Como está o controlo do teu <em>stock</em> neste momento?',o:['Compro quando acaba — não tenho controlo exacto.','Tenho uma ideia aproximada, mas não registo.','Registo, mas o processo não é consistente.','Sei exactamente o que tenho, quanto vale e quando repor.'],s:[0,1,2,3]},
+  {t:'Quando pensas no teu <em>futuro como dono</em>, qual é a tua visão?',o:['Sobreviver e pagar as contas sem stress.','Crescer o negócio e ter mais estabilidade.','Construir algo que funcione sem mim e me liberte.','Ter um negócio que gera activos e me permite investir.'],s:[0,1,2,3]},
+  {t:'Qual destas frases te <em>descreve melhor</em> hoje?',o:['"O meu negócio depende de mim a 100%."','"Tenho sistemas básicos mas falta consistência."','"Sei o que fazer mas não estou a executar."','"Estou em transição — do operacional para o estratégico."'],s:[0,1,2,3]}
+];
+
+const P={
+  S:{n:'O Sobrevivente',b:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1400&q=80',d:'O teu negócio depende de ti a <strong>100%</strong>. Tu és o sistema — quando paras, ele para. Não é falta de esforço. É falta de estrutura. A boa notícia: é o ponto de partida mais comum e tem solução directa.',sc:[{l:'Autonomia operacional',v:12},{l:'Controlo financeiro',v:18},{l:'Decisões com dados',v:10},{l:'Visão de crescimento',v:22}],p:[{t:'Ponto de falha único',d:'Se ficares doente ou um fornecedor falhar — o negócio para. A solução não é trabalhar mais, é eliminar a dependência.'},{t:'Dinheiro invisível',d:'Há receita, mas não sabes para onde vai. Não é falta de esforço — é ausência de sistema financeiro básico.'},{t:'Decisões no escuro',d:'Estás a tomar decisões importantes sem números. Como conduzir à noite sem faróis.'}],m:['📊 Sistema de Controlo Diário','💰 Separação Financeira','🔗 Eliminar Pontos de Falha','👤 Primeiro Colaborador Certo']},
+  C:{n:'O Construtor',b:'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=1400&q=80',d:'Já saíste da pura sobrevivência. Tens algum sistema, alguma ajuda. Mas falta <strong>consistência e dados.</strong> O teu maior risco agora é crescer sem estrutura — e criar problemas maiores do que os que resolves.',sc:[{l:'Autonomia operacional',v:38},{l:'Controlo financeiro',v:42},{l:'Decisões com dados',v:32},{l:'Visão de crescimento',v:55}],p:[{t:'Crescimento sem mapa',d:'Estás a crescer, mas não sabes o que está a funcionar. Podes estar a investir onde não devia.'},{t:'Cashflow imprevisível',d:'Os meses bons escondem os meses maus. Um sistema financeiro mostra a realidade, não apenas os picos.'},{t:'Processos na tua cabeça',d:'A equipa existe, mas o processo está em ti. Quando saíres, o caos instala-se.'}],m:['📋 Scorecard Semanal','💸 Profit First Adaptado','📈 Análise de Padrões','🤝 Delegar com Controlo']},
+  G:{n:'O Gestor em Transição',b:'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1400&q=80',d:'Estás a fazer a transição mais difícil: <strong>de operador a gestor.</strong> Sabes o que precisa de acontecer, mas a execução ainda falha. O problema não é conhecimento — é o sistema de acompanhamento.',sc:[{l:'Autonomia operacional',v:58},{l:'Controlo financeiro',v:62},{l:'Decisões com dados',v:52},{l:'Visão de crescimento',v:72}],p:[{t:'Saber sem executar',d:'Tens o diagnóstico certo mas falta o sistema que te force a agir consistentemente.'},{t:'Dados sem acção',d:'Recolhes informação mas não a transformas em decisões rápidas.'},{t:'Equipa sem autonomia real',d:'Delegas tarefas, não responsabilidades. Essa diferença custa-te tempo e margem.'}],m:['🎯 Sistema do Dono Completo','🔍 Análise de Padrões','⚠️ Gestão de Pontos Cegos','📊 Escalar sem Perder Controlo']},
+  A:{n:'O Arquitecto',b:'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=1400&q=80',d:'Estás a pensar como um verdadeiro construtor de negócios. O teu próximo nível não é trabalhar mais — é criar <strong>sistemas que trabalhem por ti</strong>, activos que valorizem e decisões baseadas em dados reais.',sc:[{l:'Autonomia operacional',v:76},{l:'Controlo financeiro',v:80},{l:'Decisões com dados',v:68},{l:'Visão de crescimento',v:90}],p:[{t:'Optimização de margem',d:'Com a estrutura que tens, pequenas melhorias têm impacto desproporcional.'},{t:'Visibilidade total',d:'Precisas de ver o negócio de cima — padrões, tendências, oportunidades.'},{t:'Construção de activos reais',d:'É hora de pensar no que o negócio vale como activo, não apenas no que gera.'}],m:['📊 Análise Avançada de Dados','💎 Património & Activos','🚀 Expansão Controlada','💡 Novos Canais de Renda']}
+};
+
+// ══════════════════════════════════
+// ESTADO
+// ══════════════════════════════════
+let cur=0,ans=[],totalScore=0,perfilKey='',generatedCode='';
+let selectedPlan='anual';
+let AVDATA={};
+const L=['A','B','C','D'];
+
+// ══════════════════════════════════
+// SCROLL STORIES
+// ══════════════════════════════════
+const track=document.getElementById('scroll-track');
+let down=false,sx,sl;
+track.addEventListener('mousedown',e=>{down=true;sx=e.pageX-track.offsetLeft;sl=track.scrollLeft;});
+track.addEventListener('mouseleave',()=>down=false);
+track.addEventListener('mouseup',()=>down=false);
+track.addEventListener('mousemove',e=>{if(!down)return;e.preventDefault();track.scrollLeft=sl-(e.pageX-track.offsetLeft-sx)*1.5;});
+track.addEventListener('scroll',()=>{const w=track.querySelector('.story-card').offsetWidth+20;const i=Math.round(track.scrollLeft/w);document.querySelectorAll('.sdot').forEach((d,j)=>d.classList.toggle('active',j===i));});
+function scrollToCard(i){const w=track.querySelector('.story-card').offsetWidth+20;track.scrollTo({left:i*w,behavior:'smooth'});}
+let ai=0;setInterval(()=>{ai=(ai+1)%5;scrollToCard(ai);},4500);
+
+// ══════════════════════════════════
+// STEPS UI
+// ══════════════════════════════════
+function setStep(n){
+  ['pill1','pill2','pill3'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i+1===n) el.classList.add('active');
+    else if(i+1<n) el.classList.add('done');
+  });
+}
+
+// ══════════════════════════════════
+// QUIZ
+// ══════════════════════════════════
+function startQuiz(){
+  ['hero-section','main-content','problem-section'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+  document.getElementById('quiz-section').classList.add('active');
+  setStep(1);
+  window.scrollTo({top:0,behavior:'smooth'});
+  renderQ();
+}
+
+function renderQ(){
+  const q=Q[cur];
+  document.getElementById('q-num').textContent=String(cur+1).padStart(2,'0')+' / 07';
+  document.getElementById('q-label').textContent='Pergunta '+(cur+1)+' de 7';
+  document.getElementById('q-text').innerHTML=q.t;
+  const c=document.getElementById('q-card');c.style.animation='none';void c.offsetWidth;c.style.animation='fadeUp .4s ease both';
+  document.getElementById('q-options').innerHTML=q.o.map((o,i)=>`<button class="opt ${ans[cur]===i?'selected':''}" onclick="sel(${i})"><span class="opt-letter">${L[i]}</span><span>${o}</span></button>`).join('');
+  const p=Math.round((cur/7)*100);
+  document.getElementById('progress-fill').style.width=p+'%';
+  document.getElementById('q-pct').textContent=p+'%';
+  document.getElementById('btn-back').style.visibility=cur>0?'visible':'hidden';
+  const btn=document.getElementById('btn-next');
+  btn.className='btn-next'+(ans[cur]!==undefined?' ready':'');
+  btn.textContent=cur===6?'Ver o meu perfil →':'Continuar →';
+}
+function sel(i){ans[cur]=i;document.querySelectorAll('.opt').forEach((e,j)=>e.classList.toggle('selected',j===i));document.getElementById('btn-next').className='btn-next ready';}
+function nextQ(){if(ans[cur]===undefined)return;if(cur<6){cur++;renderQ();}else loadQuiz();}
+function prevQ(){if(cur>0){cur--;renderQ();}}
+
+function loadQuiz(){
+  document.getElementById('quiz-section').classList.remove('active');
+  const ls=document.getElementById('loading-section');
+  ls.style.display='flex';ls.style.flexDirection='column';ls.style.minHeight='100vh';ls.style.alignItems='center';ls.style.justifyContent='center';
+  totalScore=ans.reduce((s,a,i)=>s+Q[i].s[a],0);
+  const fill=document.getElementById('loading-fill');
+  ['ls1','ls2','ls3','ls4'].forEach((id,i)=>setTimeout(()=>{document.getElementById(id).classList.add('done');fill.style.width=((i+1)/4*100)+'%';},(i+1)*750));
+  setTimeout(showQuizResult,3600);
+}
+
+function generateCode(pk,score){
+  const hash=Math.random().toString(36).slice(2,4).toUpperCase();
+  return`DONO-${pk}${score}${hash}`;
+}
+function getP(){
+  if(totalScore<=5){perfilKey='S';return P.S;}
+  if(totalScore<=10){perfilKey='C';return P.C;}
+  if(totalScore<=15){perfilKey='G';return P.G;}
+  perfilKey='A';return P.A;
+}
+
+function showQuizResult(){
+  document.getElementById('loading-section').style.display='none';
+  document.getElementById('result-section').classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  const p=getP();
+  const scoreDisplay=Math.round(30+totalScore*(70/21));
+  generatedCode=generateCode(perfilKey,scoreDisplay);
+  document.getElementById('result-name').textContent=p.n;
+  document.getElementById('result-code').textContent=generatedCode;
+  document.getElementById('nsb-code-display').textContent=generatedCode;
+  document.getElementById('result-bg').style.cssText=`background-image:linear-gradient(to bottom,rgba(12,11,8,.3),rgba(12,11,8,.7)),url('${p.b}');background-size:cover;background-position:center 25%;`;
+  document.getElementById('result-desc').innerHTML=p.d;
+  document.getElementById('score-grid').innerHTML=p.sc.map(s=>`<div><div class="sb-label">${s.l}</div><div class="sb-track"><div class="sb-fill" data-v="${s.v}"></div></div><div class="sb-val">${s.v}%</div></div>`).join('');
+  setTimeout(()=>document.querySelectorAll('.sb-fill').forEach(e=>e.style.width=e.dataset.v+'%'),400);
+  document.getElementById('result-pontos').innerHTML=p.p.map((pt,i)=>`<div class="ponto"><div class="ponto-num">${i+1}</div><div><div class="ponto-title">${pt.t}</div><div class="ponto-desc">${pt.d}</div></div></div>`).join('');
+  const ic=['📊','💰','🔍','🚀'];
+  document.getElementById('modules-grid').innerHTML=p.m.map((m,i)=>`<div class="mod-card"><div class="mod-icon">${ic[i]}</div><div class="mod-title">Módulo ${i+1}</div><div class="mod-desc">${m}</div><div class="mod-lock">🔒</div></div>`).join('');
+  let n=Math.floor(Math.random()*12)+8;
+  document.getElementById('urgency-num').textContent=n;
+  setInterval(()=>{n+=Math.random()>.6?1:-1;n=Math.max(5,Math.min(26,Math.round(n)));document.getElementById('urgency-num').textContent=n;},5000);
+}
+
+// ══════════════════════════════════
+// IR PARA AVALIAÇÃO (sem sair)
+// ══════════════════════════════════
+function goToAvaliacao(){
+  document.getElementById('result-section').classList.remove('active');
+  document.getElementById('avaliacao-section').classList.add('active');
+  document.getElementById('av-code-display').textContent=generatedCode;
+  setStep(2);
+  window.scrollTo({top:0,behavior:'smooth'});
+  buildMonthSelectors();
+  buildMonthCards();
+}
+
+// ══════════════════════════════════
+// AVALIAÇÃO — MESES
+// ══════════════════════════════════
+function buildMonthSelectors(){
+  const now=new Date();
+  const options=MESES_PT.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  ['sel-m1','sel-m2','sel-m3'].forEach((id,offset)=>{
+    const sel=document.getElementById(id);
+    sel.innerHTML=options;
+    // default: 3 meses anteriores ao actual
+    const defaultMonth=(now.getMonth()-2+offset+12)%12;
+    sel.value=defaultMonth;
+  });
+}
+
+function updateMonthName(idx){buildMonthCards();}
+
+function buildMonthCards(){
+  const grid=document.getElementById('months-data-grid');
+  if(!grid) return;
+  const sels=['sel-m1','sel-m2','sel-m3'].map(id=>document.getElementById(id));
+  const names=sels.map(s=>MESES_PT[+s.value]);
+  // preserve existing values
+  const existing=[[],[],[]];
+  ['rec','cost','desp'].forEach(field=>{
+    [0,1,2].forEach(i=>{
+      const el=document.getElementById(`m${i}-${field}`);
+      existing[i].push(el?el.value:'');
+    });
+  });
+  grid.innerHTML=names.map((name,i)=>`
+    <div class="month-card">
+      <div class="mc-num">Mês ${i+1}</div>
+      <div class="mc-month-name">${name}</div>
+      <div class="inp-group">
+        <label class="inp-label">Receita (Kz)</label>
+        <input type="number" class="inp" id="m${i}-rec" placeholder="Ex: 500.000" min="0" value="${existing[i][0]||''}" oninput="previewMargem(${i})">
+      </div>
+      <div class="inp-group">
+        <label class="inp-label">Custo total (Kz)</label>
+        <input type="number" class="inp" id="m${i}-cost" placeholder="Ex: 380.000" min="0" value="${existing[i][1]||''}" oninput="previewMargem(${i})">
+      </div>
+      <div class="inp-group">
+        <label class="inp-label">Despesas fixas (Kz)</label>
+        <input type="number" class="inp" id="m${i}-desp" placeholder="Ex: 60.000" min="0" value="${existing[i][2]||''}" oninput="previewMargem(${i})">
+      </div>
+      <div class="mg-preview" id="mg-prev-${i}"></div>
+    </div>
+  `).join('');
+}
+
+function previewMargem(i){
+  const rec=+document.getElementById(`m${i}-rec`).value||0;
+  const cost=+document.getElementById(`m${i}-cost`).value||0;
+  const desp=+document.getElementById(`m${i}-desp`).value||0;
+  const mg=rec-cost-desp;
+  const el=document.getElementById(`mg-prev-${i}`);
+  if(!rec){el.textContent='';return;}
+  el.className='mg-preview '+(mg>0?'pos':'neg');
+  el.textContent='Margem: '+fmt(mg)+' Kz ('+(rec>0?(mg/rec*100).toFixed(1):0)+'%)';
+}
+
+function fmt(n){if(!n&&n!==0)return'—';return Math.round(n).toLocaleString('pt-PT');}
+function fmtK(n){if(!n&&n!==0)return'—';if(Math.abs(n)>=1000000)return(n/1000000).toFixed(1)+'M';if(Math.abs(n)>=1000)return(n/1000).toFixed(0)+'K';return Math.round(n)+'';}
+
+// ══════════════════════════════════
+// ANÁLISE
+// ══════════════════════════════════
+function runAnalysis(){
+  const sels=['sel-m1','sel-m2','sel-m3'].map(id=>+document.getElementById(id).value);
+  const d=[];
+  for(let i=0;i<3;i++){
+    const rec=+document.getElementById(`m${i}-rec`).value||0;
+    const cost=+document.getElementById(`m${i}-cost`).value||0;
+    const desp=+document.getElementById(`m${i}-desp`).value||0;
+    d.push({name:MESES_PT[sels[i]],short:MESES_PT[sels[i]].slice(0,3),rec,cost,desp,margem:rec-cost-desp,mg_pct:rec>0?((rec-cost-desp)/rec*100):0});
+  }
+  AVDATA={
+    months:d,
+    nome:document.getElementById('biz-nome').value||'A tua empresa',
+    sector:document.getElementById('biz-sector').value,
+    colab:+document.getElementById('biz-colab').value||1,
+    meta:+document.getElementById('biz-meta').value||0,
+    code:generatedCode,
+    perfil:perfilKey
+  };
+  document.getElementById('avaliacao-section').classList.remove('active');
+  document.getElementById('loading-av').classList.add('active');
+  const bar=document.getElementById('lav-bar');
+  ['lav1','lav2','lav3','lav4','lav5'].forEach((id,i)=>setTimeout(()=>{document.getElementById(id).classList.add('on');bar.style.width=((i+1)/5*100)+'%';},(i+1)*600));
+  setTimeout(showAvResult,3800);
+}
+
+// ══════════════════════════════════
+// RESULTADO ANÁLISE
+// ══════════════════════════════════
+function showAvResult(){
+  document.getElementById('loading-av').classList.remove('active');
+  document.getElementById('result-av').classList.add('active');
+  setStep(3);
+  window.scrollTo({top:0,behavior:'smooth'});
+
+  const D=AVDATA;const m=D.months;
+  const totalRec=m.reduce((a,b)=>a+b.rec,0);
+  const totalMg=m.reduce((a,b)=>a+b.margem,0);
+  const avgPct=m.reduce((a,b)=>a+b.mg_pct,0)/3;
+  const recTrend=m[2].rec-m[0].rec;
+  const mgTrend=m[2].margem-m[0].margem;
+
+  let score=50;
+  if(avgPct>30)score+=15;else if(avgPct>20)score+=8;else if(avgPct<10)score-=15;
+  if(recTrend>0)score+=10;else score-=8;
+  if(mgTrend>0)score+=10;else score-=8;
+  if(D.meta>0&&totalMg/3>=D.meta)score+=10;
+  score=Math.max(8,Math.min(96,Math.round(score)));
+
+  const V=[{min:0,max:40,t:'Estado Crítico',c:'var(--r)'},{min:40,max:60,t:'Requer Atenção',c:'var(--y)'},{min:60,max:80,t:'Em Crescimento',c:'var(--gold)'},{min:80,max:101,t:'Negócio Sólido',c:'var(--g)'}];
+  const v=V.find(x=>score>=x.min&&score<x.max);
+
+  // Score hero
+  animCount('sb-score',score);
+  document.getElementById('sb-verdict').textContent=v.t;
+  document.getElementById('sb-verdict').style.color=v.c;
+  document.getElementById('sm-rec').textContent=fmtK(totalRec)+' Kz';
+  document.getElementById('sm-mg').textContent=fmtK(totalMg)+' Kz';
+  document.getElementById('sm-avg').textContent=avgPct.toFixed(1)+'%';
+  setDelta('sm-rec-d',recTrend,'vs 1º mês');
+  setDelta('sm-mg-d',mgTrend,'margem');
+  document.getElementById('sm-avg-d').textContent='média 3 meses';
+  document.getElementById('sm-avg-d').className='sbm-delta '+(avgPct>20?'up':avgPct<10?'dn':'');
+
+  // Metrics
+  document.getElementById('metrics-grid').innerHTML=`
+    <div class="mcard ${score>=60?'g':score>=40?'y':'r'}"><div class="mc-lbl">Score de saúde</div><div class="mc-val">${score}<span style="font-size:13px;color:var(--txt3)">/100</span></div><div class="mc-sub">${v.t}</div></div>
+    <div class="mcard ${recTrend>=0?'g':'r'}"><div class="mc-lbl">Tendência receita</div><div class="mc-val" style="color:${recTrend>=0?'var(--g)':'var(--r)'}">${recTrend>=0?'▲':'▼'} ${fmtK(Math.abs(recTrend))}</div><div class="mc-sub">1º → 3º mês</div></div>
+    <div class="mcard ${mgTrend>=0?'g':'r'}"><div class="mc-lbl">Tendência margem</div><div class="mc-val" style="color:${mgTrend>=0?'var(--g)':'var(--r)'}">${mgTrend>=0?'▲':'▼'} ${fmtK(Math.abs(mgTrend))}</div><div class="mc-sub">evolução real</div></div>
+    <div class="mcard ${D.meta>0&&totalMg/3>=D.meta?'g':'y'}"><div class="mc-lbl">Meta vs real</div><div class="mc-val">${D.meta>0?Math.round(totalMg/3/D.meta*100)+'%':'—'}</div><div class="mc-sub">${D.meta>0?'da meta mensal':'define uma meta'}</div></div>
+  `;
+
+  // Chart
+  drawChart(m);
+
+  // Free insights
+  const ins=[];
+  if(mgTrend>0) ins.push({type:'good',icon:'📈',title:'Tendência positiva de margem',desc:`A margem cresceu ${fmtK(mgTrend)} Kz entre o 1º e o 3º mês. A análise completa mostra como acelerar este crescimento.`});
+  else ins.push({type:'crit',icon:'📉',title:'Queda de margem identificada',desc:`A margem caiu ${fmtK(Math.abs(mgTrend))} Kz nos 3 meses. Sem correcção este padrão agrava-se. A análise completa revela a causa raiz.`});
+  if(avgPct<15) ins.push({type:'warn',icon:'⚠️',title:`Margem média de ${avgPct.toFixed(1)}% — abaixo do recomendado`,desc:`Uma margem abaixo de 15% deixa o negócio vulnerável a imprevistos. A análise completa mostra exactamente onde está a fuga de valor.`});
+  else ins.push({type:'good',icon:'✅',title:`Margem média de ${avgPct.toFixed(1)}% — dentro do esperado`,desc:`A margem está num intervalo razoável. A análise completa revela como chegar aos 25%+ e o que está a travar esse crescimento.`});
+  document.getElementById('insights-free').innerHTML=ins.map(i=>`<div class="insight-card ${i.type}"><div class="ic-icon">${i.icon}</div><div><div class="ic-title">${i.title}</div><div class="ic-desc">${i.desc}</div></div></div>`).join('');
+
+  // Blurred hints
+  const bestI=m.indexOf(m.reduce((a,b)=>b.margem>a.margem?b:a));
+  const worstI=m.indexOf(m.reduce((a,b)=>b.margem<a.margem?b:a));
+  document.getElementById('bl-best').textContent=m[bestI].name;
+  document.getElementById('bl-crit').textContent=m[worstI].name;
+  const mgVar=m[2].mg_pct-m[0].mg_pct;
+  document.getElementById('bl-var').textContent=(mgVar>=0?'+':'')+mgVar.toFixed(1)+'%';
+  document.getElementById('bl-proj').textContent=fmtK(m[2].margem+(mgTrend/2))+' Kz';
+  document.getElementById('pw-prob').textContent=(score<40?4:score<60?3:2)+' pontos críticos';
+
+  // Urgency
+  let un=Math.floor(Math.random()*12)+8;
+  document.getElementById('urg-num').textContent=un;
+  setInterval(()=>{un+=Math.random()>.7?1:Math.random()>.5?-1:0;un=Math.max(5,Math.min(28,Math.round(un)));document.getElementById('urg-num').textContent=un;},6000);
+
+  // IA INSIGHT — Claude via API
+  callClaudeInsight(D,m,score,avgPct,mgTrend,recTrend);
+}
+
+// ══════════════════════════════════
+// CLAUDE API — ANÁLISE INTELIGENTE
+// ══════════════════════════════════
+async function callClaudeInsight(D,m,score,avgPct,mgTrend,recTrend){
+  const card=document.getElementById('ai-insight-card');
+  const titleEl=card.querySelector('.ic-title');
+  const textEl=document.getElementById('ai-insight-text');
+  titleEl.textContent='A analisar o teu negócio…';
+  textEl.textContent='';
+  textEl.classList.add('typing-cursor');
+
+  const prompt=`És um mentor de negócios especializado em pequenas empresas angolanas. Analisa estes dados e dá um insight directo, prático e pessoal em português de Angola (máximo 3 frases curtas):
+
+Empresa: ${D.nome} | Sector: ${D.sector} | Colaboradores: ${D.colab}
+Score de saúde: ${score}/100
+${m.map(x=>`${x.name}: Receita ${fmt(x.rec)} Kz, Margem ${fmt(x.margem)} Kz (${x.mg_pct.toFixed(1)}%)`).join('\n')}
+Tendência margem: ${mgTrend>=0?'+':''}${fmt(mgTrend)} Kz | Margem média: ${avgPct.toFixed(1)}%
+${D.meta>0?`Meta mensal: ${fmt(D.meta)} Kz`:'Sem meta definida'}
+
+Dá um diagnóstico honesto de 2-3 frases. Identifica o maior risco actual. Termina com uma acção concreta para esta semana. Tom directo, sem rodeios, como um mentor experiente falaria.`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:200,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await res.json();
+    const text=data.content?.[0]?.text||'Análise não disponível de momento.';
+    titleEl.textContent='Diagnóstico do mentor';
+    textEl.classList.remove('typing-cursor');
+    typeText(textEl,text);
+  }catch(e){
+    titleEl.textContent='Diagnóstico automático';
+    textEl.classList.remove('typing-cursor');
+    const fallback=mgTrend<0
+      ?`A queda de margem nos últimos ${m.length} meses é o sinal mais importante. Com ${avgPct.toFixed(0)}% de margem média, qualquer imprevisto pode comprometer o mês. A acção desta semana: identifica o mês onde a queda começou e procura o custo que não estava lá antes.`
+      :`A tendência está positiva, mas ${avgPct.toFixed(0)}% de margem média deixa pouca margem de segurança. O teu próximo passo: define uma meta mensal clara e monitoriza semanalmente para não perder o ritmo que criaste.`;
+    typeText(textEl,fallback);
+  }
+}
+
+function typeText(el,text){
+  el.textContent='';
+  let i=0;
+  const interval=setInterval(()=>{
+    el.textContent+=text[i];i++;
+    if(i>=text.length) clearInterval(interval);
+  },18);
+}
+
+// ══════════════════════════════════
+// UTILS RESULTADO
+// ══════════════════════════════════
+function animCount(id,target){
+  let c=0;const el=document.getElementById(id);
+  const s=()=>{c=Math.min(c+2,target);el.textContent=c;if(c<target)requestAnimationFrame(s);};
+  setTimeout(()=>requestAnimationFrame(s),300);
+}
+function setDelta(id,v,label){
+  const el=document.getElementById(id);if(!el)return;
+  el.textContent=(v>=0?'▲ +':'▼ ')+fmtK(Math.abs(v))+' Kz '+label;
+  el.className='sbm-delta '+(v>=0?'up':'dn');
+}
+
+function drawChart(m){
+  const canvas=document.getElementById('chart-evolucao');if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||700;canvas.width=W;canvas.height=160;
+  const pad={t:20,r:20,b:36,l:60};
+  const cW=W-pad.l-pad.r,cH=canvas.height-pad.t-pad.b;
+  const maxV=Math.max(...m.map(x=>x.rec),...m.map(x=>Math.max(x.margem,0)))*1.15||1;
+  ctx.clearRect(0,0,W,canvas.height);
+  [0,.25,.5,.75,1].forEach(r=>{
+    const y=pad.t+cH*(1-r);
+    ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cW,y);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.25)';ctx.font='9px Fira Code';ctx.textAlign='right';ctx.fillText(fmtK(maxV*r),pad.l-6,y+3);
+  });
+  function drawL(vals,color,dash=[]){
+    const pts=vals.map((v,i)=>({x:pad.l+i*(cW/2),y:pad.t+cH*(1-Math.max(v,0)/maxV)}));
+    const rgb=color==='#d4a843'?'212,168,67':'34,197,94';
+    const grad=ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
+    grad.addColorStop(0,`rgba(${rgb},0.15)`);grad.addColorStop(1,`rgba(${rgb},0)`);
+    ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.lineTo(pts[pts.length-1].x,pad.t+cH);ctx.lineTo(pts[0].x,pad.t+cH);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+    ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.setLineDash(dash);ctx.stroke();ctx.setLineDash([]);
+    pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fillStyle='#0c0b08';ctx.fill();});
+  }
+  drawL(m.map(x=>x.rec),'#d4a843');
+  drawL(m.map(x=>x.margem),'#22c55e',[5,4]);
+  m.forEach((x,i)=>{const px=pad.l+i*(cW/2);ctx.fillStyle='rgba(255,255,255,.35)';ctx.font='9px Fira Code';ctx.textAlign='center';ctx.fillText(x.short.toUpperCase(),px,canvas.height-8);});
+  [[0,'#d4a843','Receita'],[1,'#22c55e','Margem']].forEach(([i,c,lbl])=>{const x=W-140+i*70;ctx.beginPath();ctx.arc(x,12,5,0,Math.PI*2);ctx.fillStyle=c;ctx.fill();ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='9px Fira Code';ctx.textAlign='left';ctx.fillText(lbl,x+9,16);});
+}
+
+// ══════════════════════════════════
+// PLANOS & MODAL
+// ══════════════════════════════════
+function selectPlan(plan){
+  selectedPlan=plan;
+  document.getElementById('plan-trim').classList.toggle('selected',plan==='trimestral');
+  document.getElementById('plan-anual').classList.toggle('selected',plan==='anual');
+  document.getElementById('modal-plan-badge').textContent=plan==='anual'?'Plano Anual · 22.000 Kz':'Plano Trimestral · 9.900 Kz';
+}
+function openModal(){document.getElementById('modal-bg').classList.add('open');}
+function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
+
+function submitLead(){
+  const nome=document.getElementById('lead-nome').value.trim();
+  const tel=document.getElementById('lead-tel').value.trim();
+  if(!nome){document.getElementById('lead-nome').style.borderBottomColor='var(--r)';document.getElementById('lead-nome').focus();return;}
+  if(!tel){document.getElementById('lead-tel').style.borderBottomColor='var(--r)';document.getElementById('lead-tel').focus();return;}
+  const planLabel=selectedPlan==='anual'?'Anual (22.000 Kz)':'Trimestral (9.900 Kz)';
+  const score=document.getElementById('sb-score').textContent;
+  const msg=`Olá! Acabei de fazer o diagnóstico e avaliação.\n\n*Nome:* ${nome}\n*Empresa:* ${AVDATA.nome||'—'}\n*Código:* ${generatedCode||'—'}\n*Score:* ${score}/100\n*Plano escolhido:* ${planLabel}\n\nQuero desbloquear a análise completa e ter acesso aos sistemas.`;
+  const waUrl=`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
+  const code='ACC-'+Math.random().toString(36).slice(2,6).toUpperCase();
+  document.getElementById('sov-code').textContent=code;
+  document.getElementById('modal-bg').classList.remove('open');
+  document.getElementById('success-overlay').classList.add('active');
+  setTimeout(()=>window.open(waUrl,'_blank'),800);
+}
+</script>
+</body>
+</html>
