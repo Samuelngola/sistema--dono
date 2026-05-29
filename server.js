@@ -340,6 +340,33 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'diagnostico-do-dono.html'));
 });
 
+
+// ── ROTAS DAS PÁGINAS ──
+app.get('/sistema', (req, res) => {
+  res.sendFile(path.join(__dirname, 'sistema-do-dono.html'));
+});
+
+app.get('/analise', (req, res) => {
+  res.sendFile(path.join(__dirname, 'analise-dono.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-dono.html'));
+});
+
+app.get('/diagnostico', (req, res) => {
+  res.sendFile(path.join(__dirname, 'diagnostico-do-dono.html'));
+});
+
+// Ficheiros HTML directos pelo nome
+app.get('/*.html', (req, res) => {
+  const file = req.params[0] + '.html';
+  const filepath = path.join(__dirname, file);
+  res.sendFile(filepath, (err) => {
+    if (err) res.status(404).json({ error: 'Página não encontrada' });
+  });
+});
+
 // ── START ──
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
