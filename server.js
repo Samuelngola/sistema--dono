@@ -16,13 +16,19 @@ app.use((req, res, next) => {
 });
 
 // ── SERVIR FICHEIROS HTML ──
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname)));
+
+// Ignorar node_modules no static
+app.use((req, res, next) => {
+  if (req.path.startsWith('/node_modules')) return res.status(404).send('Not found');
+  next();
+});
 
 // ── CONFIG ──
 const WA_NUMBER = process.env.WA_NUMBER || '244928708281';
 const PROXYPAY_API_KEY = process.env.PROXYPAY_API_KEY || 'sandbox_key';
 const PROXYPAY_ENTITY = process.env.PROXYPAY_ENTITY || '00000';
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'dono2025';
+const ADMIN_SECRET = process.env.ADMIN_SECRET || process.env.ADM_SECRET || 'dono2025';
 const BASE_URL = process.env.BASE_URL || 'https://sistema-dono.onrender.com';
 const PROXYPAY_ENV = process.env.PROXYPAY_ENV || 'sandbox';
 
