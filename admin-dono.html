@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Admin · Sistema do Dono</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=Barlow:wght@300;400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#09090a;--bg2:#111113;--bg3:#18181b;--bg4:#1c1c20;
+  --gold:#c8a84b;--gold2:#e8c46a;--gold3:#7a6030;
+  --goldalpha:rgba(200,168,75,.12);
+  --txt:#f4f0e8;--txt2:#c8bfa8;--txt3:#7a7060;
+  --bdr:rgba(200,168,75,.18);--bdr2:rgba(255,255,255,.06);
+  --g:#16a34a;--g2:#4ade80;--r:#dc2626;--r2:#f87171;--y:#ca8a04;--y2:#fbbf24;
+  --b:#2563eb;--b2:#60a5fa;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--txt);font-family:'Barlow',sans-serif;min-height:100vh;}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;}
+.login-screen.hidden{display:none;}
+.ls-logo{font-family:'Playfair Display',serif;font-size:48px;color:var(--gold);margin-bottom:6px;}
+.ls-sub{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--txt3);margin-bottom:48px;}
+.ls-form{display:flex;flex-direction:column;gap:12px;max-width:320px;width:100%;}
+.ls-inp{background:rgba(255,255,255,.04);border:1px solid var(--bdr2);border-bottom:2px solid var(--gold3);color:var(--txt);font-family:'Barlow',sans-serif;font-size:16px;padding:14px 16px;outline:none;width:100%;transition:border-color .2s;}
+.ls-inp:focus{border-bottom-color:var(--gold);}
+.ls-inp::placeholder{color:var(--txt3);}
+.ls-btn{background:var(--gold);color:#09090a;font-family:'Barlow',sans-serif;font-size:16px;font-weight:800;padding:16px;border:none;cursor:pointer;transition:all .2s;}
+.ls-btn:hover{background:var(--gold2);}
+.ls-err{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:1px;color:var(--r2);margin-top:4px;display:none;}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(9,9,10,.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:54px;}
+.tl{font-family:'Playfair Display',serif;font-size:18px;color:var(--gold);}
+.tl span{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--txt3);display:block;margin-top:-2px;}
+.tr{display:flex;align-items:center;gap:12px;}
+.tb-stat{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:1px;color:var(--txt3);}
+.tb-stat strong{color:var(--gold);}
+.logout-btn{background:none;border:1px solid var(--bdr2);color:var(--txt3);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;cursor:pointer;transition:all .2s;}
+.logout-btn:hover{border-color:var(--r);color:var(--r2);}
+
+/* LAYOUT */
+.shell{display:flex;min-height:calc(100vh - 54px);}
+.sidebar{width:200px;min-width:200px;background:var(--bg2);border-right:1px solid var(--bdr2);padding:20px 0;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 18px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt3);cursor:pointer;border-left:2px solid transparent;transition:all .15s;background:none;border-right:none;border-top:none;border-bottom:none;width:100%;text-align:left;font-family:'Fira Code',monospace;}
+.sb-item:hover{color:var(--txt2);background:rgba(255,255,255,.02);}
+.sb-item.active{color:var(--gold);border-left-color:var(--gold);background:var(--goldalpha);}
+.sb-icon{font-size:14px;width:18px;text-align:center;}
+.main{flex:1;overflow-x:hidden;}
+.page{display:none;padding:28px 24px;}
+.page.active{display:block;}
+
+/* PAGE HEADER */
+.ph{margin-bottom:28px;}
+.ph-title{font-family:'Playfair Display',serif;font-size:36px;color:var(--txt);line-height:1.1;}
+.ph-title em{color:var(--gold);font-style:italic;}
+.ph-sub{font-size:13px;color:var(--txt3);margin-top:4px;font-family:'Fira Code',monospace;letter-spacing:1px;}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
+.stat-card{background:var(--bg2);border:1px solid var(--bdr2);padding:20px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-card.gold::before{background:var(--gold);}
+.stat-card.green::before{background:var(--g);}
+.stat-card.red::before{background:var(--r);}
+.stat-card.blue::before{background:var(--b);}
+.sc-label{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px;}
+.sc-val{font-family:'Playfair Display',serif;font-size:32px;color:var(--txt);font-weight:700;line-height:1;}
+.sc-sub{font-size:11px;color:var(--txt3);margin-top:4px;}
+
+/* FORM CARD */
+.form-card{background:var(--bg2);border:1px solid var(--bdr2);padding:28px;margin-bottom:20px;position:relative;}
+.form-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.fc-title{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--txt3);margin-bottom:20px;}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field-label{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);}
+.inp{background:rgba(255,255,255,.04);border:1px solid var(--bdr2);border-bottom:2px solid var(--gold3);color:var(--txt);font-family:'Barlow',sans-serif;font-size:15px;padding:10px 12px;outline:none;transition:border-color .2s;width:100%;}
+.inp:focus{border-bottom-color:var(--gold);}
+.inp::placeholder{color:var(--txt3);}
+.sel{background:rgba(255,255,255,.04);border:1px solid var(--bdr2);border-bottom:2px solid var(--gold3);color:var(--txt2);font-family:'Barlow',sans-serif;font-size:15px;padding:10px 12px;outline:none;cursor:pointer;width:100%;}
+.sel option{background:#1a1a1e;}
+
+/* BOTÕES */
+.btn{font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;letter-spacing:.5px;padding:11px 24px;border:none;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
+.btn-gold{background:var(--gold);color:#09090a;}
+.btn-gold:hover{background:var(--gold2);}
+.btn-green{background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);color:var(--g2);}
+.btn-green:hover{background:rgba(22,163,74,.25);}
+.btn-red{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.2);color:var(--r2);}
+.btn-red:hover{background:rgba(220,38,38,.2);}
+.btn-ghost{background:none;border:1px solid var(--bdr2);color:var(--txt3);}
+.btn-ghost:hover{border-color:var(--txt3);color:var(--txt2);}
+.btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+
+/* RESULTADO DO LINK */
+.link-result{background:rgba(200,168,75,.08);border:1px solid var(--gold3);padding:20px;margin-top:16px;display:none;}
+.link-result.show{display:block;}
+.lr-label{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.lr-link{font-family:'Fira Code',monospace;font-size:12px;color:var(--txt2);word-break:break-all;background:rgba(0,0,0,.3);padding:12px;margin-bottom:12px;line-height:1.6;}
+.lr-ref{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}
+.lr-ref-item{text-align:center;background:rgba(0,0,0,.2);padding:12px 8px;}
+.lri-label{font-family:'Fira Code',monospace;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:4px;}
+.lri-val{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);font-weight:700;letter-spacing:2px;}
+.lr-wa{width:100%;background:#25D366;color:#fff;font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;padding:12px;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.lr-wa:hover{background:#1fba57;}
+
+/* TABELA CLIENTES */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);padding:8px 12px;text-align:left;border-bottom:1px solid var(--bdr2);}
+td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--txt2);}
+tr:hover td{background:rgba(255,255,255,.02);}
+td.highlight{color:var(--txt);font-weight:600;}
+.status-badge{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;display:inline-block;}
+.s-active{background:rgba(22,163,74,.15);color:var(--g2);border:1px solid rgba(22,163,74,.2);}
+.s-expiring{background:rgba(202,138,4,.15);color:var(--y2);border:1px solid rgba(202,138,4,.2);}
+.s-expired{background:rgba(220,38,38,.12);color:var(--r2);border:1px solid rgba(220,38,38,.2);}
+.s-pending{background:rgba(37,99,235,.12);color:var(--b2);border:1px solid rgba(37,99,235,.2);}
+
+/* PROGRESS BAR */
+.mini-progress{height:4px;background:rgba(255,255,255,.06);margin-top:4px;border-radius:2px;overflow:hidden;}
+.mp-fill{height:100%;border-radius:2px;}
+
+/* REF CARD */
+.ref-card{background:var(--bg3);border:1px solid var(--bdr2);padding:20px;margin-bottom:12px;}
+.rc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.rc-name{font-size:15px;font-weight:600;color:var(--txt);}
+.rc-plan{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:1px;color:var(--gold);}
+.rc-refs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.rc-ref-item{background:rgba(0,0,0,.3);padding:8px;text-align:center;}
+.rri-l{font-family:'Fira Code',monospace;font-size:7px;letter-spacing:1px;text-transform:uppercase;color:var(--txt3);margin-bottom:2px;}
+.rri-v{font-family:'Fira Code',monospace;font-size:13px;color:var(--txt);letter-spacing:1px;}
+.rc-actions{display:flex;gap:8px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--g);color:#fff;font-family:'Fira Code',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:12px 20px;opacity:0;transform:translateY(6px);transition:all .3s;pointer-events:none;z-index:999;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.err{background:var(--r);}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--bdr);padding:32px;max-width:460px;width:100%;position:relative;}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.modal-title{font-family:'Playfair Display',serif;font-size:26px;color:var(--txt);margin-bottom:16px;}
+.modal-title em{color:var(--gold);font-style:italic;}
+.modal-body{font-size:14px;color:var(--txt3);line-height:1.7;margin-bottom:20px;}
+.modal-row{display:flex;gap:10px;justify-content:flex-end;}
+
+@media(max-width:700px){
+  .sidebar{display:none;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .fields{grid-template-columns:1fr;}
+  .lr-ref{grid-template-columns:1fr;}
+  .page{padding:16px 12px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div class="login-screen" id="login-screen">
+  <div class="ls-logo">Admin</div>
+  <div class="ls-sub">// painel do dono · acesso restrito</div>
+  <div class="ls-form">
+    <input type="password" class="ls-inp" id="ls-pwd" placeholder="Palavra-passe" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="ls-btn" onclick="doLogin()">Entrar →</button>
+    <div class="ls-err" id="ls-err">Palavra-passe incorrecta</div>
+  </div>
+</div>
+
+<!-- ══ TOPBAR ══ -->
+<div class="topbar">
+  <div class="tl">Admin<span>sistema do dono</span></div>
+  <div class="tr">
+    <div class="tb-stat">Activos: <strong id="stat-active">—</strong></div>
+    <div class="tb-stat">A expirar: <strong id="stat-expiring" style="color:var(--y2)">—</strong></div>
+    <div class="tb-stat">Receita mês: <strong id="stat-revenue" style="color:var(--gold)">—</strong></div>
+    <button class="logout-btn" onclick="doLogout()">Sair</button>
+  </div>
+</div>
+
+<div class="shell">
+<!-- ══ SIDEBAR ══ -->
+<nav class="sidebar">
+  <button class="sb-item active" onclick="nav('dashboard',this)"><span class="sb-icon">📊</span>Dashboard</button>
+  <button class="sb-item" onclick="nav('novo',this)"><span class="sb-icon">➕</span>Novo acesso</button>
+  <button class="sb-item" onclick="nav('clientes',this)"><span class="sb-icon">👥</span>Clientes</button>
+  <button class="sb-item" onclick="nav('referencias',this)"><span class="sb-icon">🏦</span>Referências</button>
+  <button class="sb-item" onclick="nav('renovar',this)"><span class="sb-icon">🔄</span>Renovar</button>
+</nav>
+
+<main class="main">
+
+<!-- ══ DASHBOARD ══ -->
+<section class="page active" id="dashboard">
+  <div class="ph">
+    <div class="ph-title">Painel <em>Admin</em></div>
+    <div class="ph-sub">// visão geral do negócio · Sistema do Dono</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card gold"><div class="sc-label">Clientes activos</div><div class="sc-val" id="d-activos">0</div><div class="sc-sub">com acesso válido</div></div>
+    <div class="stat-card green"><div class="sc-label">Receita total</div><div class="sc-val" id="d-receita">0 Kz</div><div class="sc-sub">todos os planos</div></div>
+    <div class="stat-card red"><div class="sc-label">A expirar (7d)</div><div class="sc-val" id="d-expiring">0</div><div class="sc-sub">oportunidade de renovação</div></div>
+    <div class="stat-card blue"><div class="sc-label">Pend. pagamento</div><div class="sc-val" id="d-pending">0</div><div class="sc-sub">referências emitidas</div></div>
+  </div>
+
+  <div class="form-card">
+    <div class="fc-title">Clientes a expirar nos próximos 7 dias</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Nome</th><th>Plano</th><th>Expira em</th><th>Dias</th><th>Acção</th></tr></thead>
+        <tbody id="expiring-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <div class="fc-title">Actividade recente</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Data</th><th>Cliente</th><th>Acção</th><th>Plano</th><th>Valor</th></tr></thead>
+        <tbody id="activity-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══ NOVO ACESSO ══ -->
+<section class="page" id="novo">
+  <div class="ph">
+    <div class="ph-title">Novo <em>Acesso</em></div>
+    <div class="ph-sub">// criar referência de pagamento e link de acesso</div>
+  </div>
+
+  <div class="form-card">
+    <div class="fc-title">Dados do cliente</div>
+    <div class="fields">
+      <div class="field">
+        <div class="field-label">Nome completo</div>
+        <input type="text" class="inp" id="n-nome" placeholder="Ex: João Martins">
+      </div>
+      <div class="field">
+        <div class="field-label">WhatsApp</div>
+        <input type="tel" class="inp" id="n-tel" placeholder="+244 9xx xxx xxx">
+      </div>
+      <div class="field">
+        <div class="field-label">Empresa / Negócio</div>
+        <input type="text" class="inp" id="n-empresa" placeholder="Ex: Distribuidora Angola">
+      </div>
+      <div class="field">
+        <div class="field-label">Plano</div>
+        <select class="sel" id="n-plano" onchange="updatePreview()">
+          <option value="90">Trimestral — 9.900 Kz (90 dias)</option>
+          <option value="365">Anual — 22.000 Kz (365 dias)</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label">Código diagnóstico (opcional)</div>
+        <input type="text" class="inp" id="n-codigo" placeholder="Ex: DONO-G72KX">
+      </div>
+      <div class="field">
+        <div class="field-label">Início do acesso</div>
+        <input type="date" class="inp" id="n-inicio">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="generateAccess()">⚡ Gerar referência e link</button>
+      <button class="btn btn-ghost" onclick="clearForm()">Limpar</button>
+    </div>
+
+    <div class="link-result" id="link-result">
+      <div class="lr-label">Referência de pagamento Multicaixa</div>
+      <div class="lr-ref">
+        <div class="lr-ref-item">
+          <div class="lri-label">Entidade</div>
+          <div class="lri-val" id="lr-entidade">—</div>
+        </div>
+        <div class="lr-ref-item">
+          <div class="lri-label">Referência</div>
+          <div class="lri-val" id="lr-ref">—</div>
+        </div>
+        <div class="lr-ref-item">
+          <div class="lri-label">Valor</div>
+          <div class="lri-val" id="lr-valor">—</div>
+        </div>
+      </div>
+
+      <div class="lr-label" style="margin-top:16px;">Link de acesso (enviar após pagamento)</div>
+      <div class="lr-link" id="lr-link">—</div>
+
+      <div class="btn-row" style="margin-bottom:12px;">
+        <button class="btn btn-ghost" onclick="copyLink()">📋 Copiar link</button>
+        <button class="btn btn-ghost" onclick="copyRef()">📋 Copiar referência</button>
+        <button class="btn btn-green" onclick="markPending()">⏳ Aguardar pagamento</button>
+      </div>
+      <button class="lr-wa" onclick="sendWhatsApp()">
+        <span>📱</span> Enviar referência por WhatsApp
+      </button>
+      <div style="margin-top:10px;">
+        <button class="lr-wa" style="background:#128C7E;" onclick="sendLinkWhatsApp()">
+          <span>🔗</span> Enviar link de acesso por WhatsApp (após pagamento)
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CLIENTES ══ -->
+<section class="page" id="clientes">
+  <div class="ph">
+    <div class="ph-title">Gestão de <em>Clientes</em></div>
+    <div class="ph-sub">// todos os acessos activos, expirados e pendentes</div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+    <button class="btn btn-ghost" style="font-size:12px;" onclick="filterClients('all')" id="f-all">Todos</button>
+    <button class="btn btn-ghost" style="font-size:12px;" onclick="filterClients('active')" id="f-active">Activos</button>
+    <button class="btn btn-ghost" style="font-size:12px;" onclick="filterClients('expiring')" id="f-expiring">A expirar</button>
+    <button class="btn btn-ghost" style="font-size:12px;" onclick="filterClients('expired')" id="f-expired">Expirados</button>
+    <button class="btn btn-ghost" style="font-size:12px;" onclick="filterClients('pending')" id="f-pending">Pendentes</button>
+  </div>
+
+  <div class="form-card" style="padding:0;">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Nome</th><th>Empresa</th><th>Plano</th><th>Início</th><th>Expira</th><th>Dias</th><th>Status</th><th>Valor</th><th>Acções</th></tr></thead>
+        <tbody id="clients-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══ REFERÊNCIAS ══ -->
+<section class="page" id="referencias">
+  <div class="ph">
+    <div class="ph-title">Referências <em>Pendentes</em></div>
+    <div class="ph-sub">// pagamentos a aguardar confirmação</div>
+  </div>
+  <div id="refs-list"></div>
+</section>
+
+<!-- ══ RENOVAR ══ -->
+<section class="page" id="renovar">
+  <div class="ph">
+    <div class="ph-title">Renovar <em>Acesso</em></div>
+    <div class="ph-sub">// gerar novo link para cliente existente</div>
+  </div>
+
+  <div class="form-card">
+    <div class="fc-title">Seleccionar cliente e gerar renovação</div>
+    <div class="fields">
+      <div class="field">
+        <div class="field-label">Cliente</div>
+        <select class="sel" id="r-cliente" onchange="loadClientData()">
+          <option value="">-- Seleccionar cliente --</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label">Novo plano</div>
+        <select class="sel" id="r-plano">
+          <option value="90">Trimestral — 9.900 Kz</option>
+          <option value="365">Anual — 22.000 Kz</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label">Início</div>
+        <input type="date" class="inp" id="r-inicio">
+      </div>
+    </div>
+    <div id="r-client-info" style="margin-bottom:16px;padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--bdr2);display:none;">
+      <div style="font-size:13px;color:var(--txt3);" id="r-info-txt">—</div>
+    </div>
+    <button class="btn btn-gold" onclick="generateRenewal()">🔄 Gerar renovação</button>
+    <div class="link-result" id="r-link-result">
+      <div class="lr-label">Novo link de acesso</div>
+      <div class="lr-link" id="r-lr-link">—</div>
+      <div class="btn-row" style="margin-bottom:12px;">
+        <button class="btn btn-ghost" onclick="copyRLink()">📋 Copiar link</button>
+      </div>
+      <button class="lr-wa" onclick="sendRenewalWA()"><span>📱</span> Enviar por WhatsApp</button>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- MODAL CONFIRMAR PAGO -->
+<div class="modal-bg" id="modal-paid">
+  <div class="modal">
+    <div class="modal-title">Confirmar <em>pagamento</em></div>
+    <div class="modal-body" id="modal-paid-body">—</div>
+    <div class="modal-row">
+      <button class="btn btn-ghost" onclick="document.getElementById('modal-paid').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-gold" onclick="confirmPaid()">✓ Confirmar pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL APAGAR -->
+<div class="modal-bg" id="modal-delete">
+  <div class="modal">
+    <div class="modal-title">Apagar <em>cliente</em></div>
+    <div class="modal-body" id="modal-delete-body">—</div>
+    <div class="modal-row">
+      <button class="btn btn-ghost" onclick="document.getElementById('modal-delete').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-red" onclick="confirmDelete()">✕ Apagar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+const ADMIN_PWD='dono2025'; // ← MUDA ESTA PALAVRA-PASSE
+const WA_NUMBER='244928708281';
+const SISTEMA_URL='https://sistema-do-dono.html'; // ← URL real do teu sistema
+const ENTIDADE_MC='11111'; // ← A tua entidade Multicaixa real
+const STORAGE_KEY='admin_sd_v1';
+
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+function doLogin(){
+  const pwd=document.getElementById('ls-pwd').value;
+  if(pwd===ADMIN_PWD){
+    sessionStorage.setItem('admin_auth','1');
+    document.getElementById('login-screen').classList.add('hidden');
+    boot();
+  } else {
+    document.getElementById('ls-err').style.display='block';
+    document.getElementById('ls-pwd').value='';
+    document.getElementById('ls-pwd').focus();
+  }
+}
+function doLogout(){sessionStorage.removeItem('admin_auth');location.reload();}
+document.getElementById('ls-pwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// ══════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════
+let DB={clients:[],activity:[]};
+let currentClientId=null;
+let pendingClientData=null;
+let currentFilter='all';
+let rLinkData=null;
+
+function saveDB(){localStorage.setItem(STORAGE_KEY,JSON.stringify(DB));}
+function loadDB(){
+  try{const r=localStorage.getItem(STORAGE_KEY);if(r)DB=JSON.parse(r);}catch(e){}
+  if(!DB.clients)DB.clients=[];
+  if(!DB.activity)DB.activity=[];
+}
+
+// ══════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════
+function uid(){return Math.random().toString(36).slice(2,8).toUpperCase();}
+function fmt(n){return Math.round(n).toLocaleString('pt-PT');}
+function today(){return new Date().toISOString().slice(0,10);}
+function addDays(date,days){const d=new Date(date);d.setDate(d.getDate()+days);return d.toISOString().slice(0,10);}
+function daysLeft(end){return Math.floor((new Date(end)-new Date())/86400000);}
+function planLabel(days){return +days===365?'Anual':'Trimestral';}
+function planValue(days){return +days===365?22000:9900;}
+
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(err?' err':'')+' show';
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ══════════════════════════════════════
+// NAVEGAÇÃO
+// ══════════════════════════════════════
+function nav(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id==='dashboard')renderDashboard();
+  else if(id==='clientes')renderClients();
+  else if(id==='referencias')renderRefs();
+  else if(id==='renovar')renderRenovar();
+}
+
+// ══════════════════════════════════════
+// TOKEN ENGINE
+// ══════════════════════════════════════
+function generateToken(clientId,days,start){
+  const payload={
+    id:clientId,
+    d:+days,
+    s:new Date(start).getTime(),
+    e:new Date(addDays(start,+days)).getTime()
+  };
+  // Base64url simples
+  const json=JSON.stringify(payload);
+  const b64=btoa(json).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  return b64;
+}
+
+function generateRef(clientId){
+  // Referência única de 9 dígitos baseada no clientId
+  const hash=clientId.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const ref=String(100000000+hash*7919%899999999).slice(0,9);
+  return ref;
+}
+
+// ══════════════════════════════════════
+// GERAR ACESSO
+// ══════════════════════════════════════
+function generateAccess(){
+  const nome=document.getElementById('n-nome').value.trim();
+  const tel=document.getElementById('n-tel').value.trim();
+  const empresa=document.getElementById('n-empresa').value.trim();
+  const plano=document.getElementById('n-plano').value;
+  const codigo=document.getElementById('n-codigo').value.trim();
+  const inicio=document.getElementById('n-inicio').value||today();
+
+  if(!nome||!tel){toast('Preenche nome e WhatsApp',true);return;}
+
+  const clientId=uid();
+  const token=generateToken(clientId,plano,inicio);
+  const ref=generateRef(clientId);
+  const valor=planValue(plano);
+  const expira=addDays(inicio,+plano);
+  const link=`${SISTEMA_URL}?token=${token}`;
+
+  // Guardar cliente como pendente
+  const client={
+    id:clientId,nome,tel,empresa,
+    plan:+plano,start:inicio,end:expira,
+    token,ref,valor,codigo,
+    status:'pending',
+    created:today()
+  };
+  DB.clients.push(client);
+  DB.activity.unshift({date:today(),client:nome,action:'Referência gerada',plan:planLabel(plano),valor});
+  saveDB();
+  pendingClientData=client;
+
+  // Mostrar resultado
+  document.getElementById('lr-entidade').textContent=ENTIDADE_MC;
+  document.getElementById('lr-ref').textContent=ref;
+  document.getElementById('lr-valor').textContent=fmt(valor)+' Kz';
+  document.getElementById('lr-link').textContent=link;
+  document.getElementById('link-result').classList.add('show');
+  updateTopStats();
+  toast('Referência gerada ✓');
+}
+
+function clearForm(){
+  ['n-nome','n-tel','n-empresa','n-codigo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('n-inicio').value='';
+  document.getElementById('link-result').classList.remove('show');
+  pendingClientData=null;
+}
+
+function copyLink(){
+  const link=document.getElementById('lr-link').textContent;
+  navigator.clipboard.writeText(link).then(()=>toast('Link copiado ✓')).catch(()=>toast('Copia manualmente',true));
+}
+
+function copyRef(){
+  const ref=document.getElementById('lr-ref').textContent;
+  const ent=document.getElementById('lr-entidade').textContent;
+  const val=document.getElementById('lr-valor').textContent;
+  navigator.clipboard.writeText(`Entidade: ${ent}\nReferência: ${ref}\nValor: ${val}`)
+    .then(()=>toast('Referência copiada ✓')).catch(()=>toast('Copia manualmente',true));
+}
+
+function markPending(){toast('Cliente marcado como aguardar pagamento ✓');}
+
+function sendWhatsApp(){
+  if(!pendingClientData) return;
+  const c=pendingClientData;
+  const msg=`Olá ${c.nome.split(' ')[0]}! 👋
+
+Para activar o teu acesso ao *Sistema do Dono*, efectua o pagamento por referência:
+
+🏦 *Entidade:* ${ENTIDADE_MC}
+🔢 *Referência:* ${c.ref}
+💰 *Valor:* ${fmt(c.valor)} Kz
+📋 *Plano:* ${planLabel(c.plan)} (${c.plan} dias)
+
+Após confirmação do pagamento envio-te o link de acesso. Qualquer dúvida estou aqui! 🙏`;
+  window.open(`https://wa.me/${c.tel.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+function sendLinkWhatsApp(){
+  if(!pendingClientData) return;
+  const c=pendingClientData;
+  const link=`${SISTEMA_URL}?token=${c.token}`;
+  const msg=`Olá ${c.nome.split(' ')[0]}! ✅
+
+Pagamento confirmado! Aqui está o teu acesso ao *Sistema do Dono*:
+
+🔗 ${link}
+
+📋 *Plano:* ${planLabel(c.plan)} — válido até ${c.end}
+💡 Guarda este link — é o teu acesso pessoal.
+
+Qualquer questão estou disponível aqui no WhatsApp! 🚀`;
+  // Marcar como activo
+  const idx=DB.clients.findIndex(cl=>cl.id===c.id);
+  if(idx>=0&&DB.clients[idx].status==='pending'){
+    DB.clients[idx].status='active';
+    DB.activity.unshift({date:today(),client:c.nome,action:'Acesso activado',plan:planLabel(c.plan),valor:c.valor});
+    saveDB();updateTopStats();
+  }
+  window.open(`https://wa.me/${c.tel.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+  toast('WhatsApp aberto ✓');
+}
+
+// ══════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════
+function renderDashboard(){
+  const activos=DB.clients.filter(c=>c.status==='active'&&daysLeft(c.end)>0).length;
+  const expiring=DB.clients.filter(c=>c.status==='active'&&daysLeft(c.end)>0&&daysLeft(c.end)<=7).length;
+  const pending=DB.clients.filter(c=>c.status==='pending').length;
+  const receita=DB.clients.filter(c=>c.status==='active').reduce((s,c)=>s+c.valor,0);
+
+  document.getElementById('d-activos').textContent=activos;
+  document.getElementById('d-expiring').textContent=expiring;
+  document.getElementById('d-pending').textContent=pending;
+  document.getElementById('d-receita').textContent=fmt(receita)+' Kz';
+
+  // Tabela a expirar
+  const exp=DB.clients.filter(c=>c.status==='active'&&daysLeft(c.end)>0&&daysLeft(c.end)<=7).sort((a,b)=>daysLeft(a.end)-daysLeft(b.end));
+  document.getElementById('expiring-tbody').innerHTML=exp.length?exp.map(c=>`
+    <tr>
+      <td class="highlight">${c.nome}</td>
+      <td>${planLabel(c.plan)}</td>
+      <td>${c.end}</td>
+      <td style="color:${daysLeft(c.end)<=3?'var(--r2)':'var(--y2)'}"><strong>${daysLeft(c.end)}</strong> dias</td>
+      <td><button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="quickRenewMsg('${c.id}')">📱 WhatsApp</button></td>
+    </tr>`).join(''):'<tr><td colspan="5" style="color:var(--txt3);padding:16px;text-align:center;">Nenhum cliente a expirar nos próximos 7 dias</td></tr>';
+
+  // Actividade
+  document.getElementById('activity-tbody').innerHTML=DB.activity.slice(0,8).map(a=>`
+    <tr>
+      <td style="color:var(--txt3);font-size:11px;">${a.date}</td>
+      <td class="highlight">${a.client}</td>
+      <td>${a.action}</td>
+      <td style="color:var(--gold);font-size:11px;">${a.plan}</td>
+      <td>${a.valor?fmt(a.valor)+' Kz':'—'}</td>
+    </tr>`).join('')||'<tr><td colspan="5" style="color:var(--txt3);padding:16px;text-align:center;">Sem actividade ainda</td></tr>';
+}
+
+function updateTopStats(){
+  const activos=DB.clients.filter(c=>c.status==='active'&&daysLeft(c.end)>0).length;
+  const expiring=DB.clients.filter(c=>c.status==='active'&&daysLeft(c.end)>0&&daysLeft(c.end)<=7).length;
+  const receita=DB.clients.filter(c=>c.status==='active').reduce((s,c)=>s+c.valor,0);
+  document.getElementById('stat-active').textContent=activos;
+  document.getElementById('stat-expiring').textContent=expiring;
+  document.getElementById('stat-revenue').textContent=fmt(receita)+' Kz';
+}
+
+// ══════════════════════════════════════
+// CLIENTES
+// ══════════════════════════════════════
+function filterClients(f){
+  currentFilter=f;
+  ['all','active','expiring','expired','pending'].forEach(x=>{
+    document.getElementById('f-'+x).className='btn btn-ghost'+(x===f?' btn-gold':'');
+    document.getElementById('f-'+x).style.fontSize='12px';
+  });
+  renderClients();
+}
+
+function renderClients(){
+  let list=DB.clients;
+  if(currentFilter==='active') list=list.filter(c=>c.status==='active'&&daysLeft(c.end)>0);
+  else if(currentFilter==='expiring') list=list.filter(c=>c.status==='active'&&daysLeft(c.end)>0&&daysLeft(c.end)<=7);
+  else if(currentFilter==='expired') list=list.filter(c=>c.status==='expired'||daysLeft(c.end)<=0);
+  else if(currentFilter==='pending') list=list.filter(c=>c.status==='pending');
+  list=[...list].sort((a,b)=>new Date(b.created)-new Date(a.created));
+
+  const days_l=c=>daysLeft(c.end);
+  const statusBadge=c=>{
+    if(c.status==='pending') return '<span class="status-badge s-pending">Pendente</span>';
+    const d=days_l(c);
+    if(d<=0) return '<span class="status-badge s-expired">Expirado</span>';
+    if(d<=7) return '<span class="status-badge s-expiring">A expirar</span>';
+    return '<span class="status-badge s-active">Activo</span>';
+  };
+
+  document.getElementById('clients-tbody').innerHTML=list.length?list.map(c=>`
+    <tr>
+      <td class="highlight">${c.nome}<br><span style="font-size:10px;color:var(--txt3);">${c.tel}</span></td>
+      <td style="color:var(--txt3);font-size:12px;">${c.empresa||'—'}</td>
+      <td>${planLabel(c.plan)}</td>
+      <td style="color:var(--txt3);font-size:11px;">${c.start}</td>
+      <td style="color:var(--txt3);font-size:11px;">${c.end}</td>
+      <td style="color:${days_l(c)<=7&&days_l(c)>0?'var(--y2)':days_l(c)<=0?'var(--r2)':'var(--txt2)'}">
+        ${c.status==='pending'?'—':days_l(c)+'d'}
+        ${c.status!=='pending'?`<div class="mini-progress"><div class="mp-fill" style="width:${Math.max(0,Math.min(100,Math.round(days_l(c)/c.plan*100)))}%;background:${days_l(c)<=7?'var(--r)':'var(--g)'}"></div></div>`:''}
+      </td>
+      <td>${statusBadge(c)}</td>
+      <td style="color:var(--gold);font-weight:600;">${fmt(c.valor)} Kz</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${c.status==='pending'?`<button class="btn btn-green" style="font-size:10px;padding:4px 8px;" onclick="openConfirmPaid('${c.id}')">✓ Pago</button>`:''}
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px;" onclick="quickMsg('${c.id}')">📱</button>
+          <button class="btn btn-red" style="font-size:10px;padding:4px 8px;" onclick="openDelete('${c.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`).join(''):'<tr><td colspan="9" style="color:var(--txt3);padding:20px;text-align:center;">Nenhum cliente encontrado</td></tr>';
+}
+
+// ══════════════════════════════════════
+// CONFIRMAR PAGO
+// ══════════════════════════════════════
+function openConfirmPaid(id){
+  currentClientId=id;
+  const c=DB.clients.find(x=>x.id===id);
+  document.getElementById('modal-paid-body').innerHTML=`Confirmar pagamento de <strong style="color:var(--gold)">${fmt(c.valor)} Kz</strong> de <strong>${c.nome}</strong> (${planLabel(c.plan)})?<br><br>O sistema irá activar o acesso e podes enviar o link ao cliente.`;
+  document.getElementById('modal-paid').classList.add('open');
+}
+
+function confirmPaid(){
+  const idx=DB.clients.findIndex(c=>c.id===currentClientId);
+  if(idx<0) return;
+  DB.clients[idx].status='active';
+  const c=DB.clients[idx];
+  DB.activity.unshift({date:today(),client:c.nome,action:'Pagamento confirmado',plan:planLabel(c.plan),valor:c.valor});
+  saveDB();
+  document.getElementById('modal-paid').classList.remove('open');
+  renderClients();updateTopStats();
+  toast('Pagamento confirmado ✓');
+  // Perguntar se quer enviar link
+  if(confirm('Enviar link de acesso ao cliente por WhatsApp?')) sendAccessLink(currentClientId);
+}
+
+function sendAccessLink(id){
+  const c=DB.clients.find(x=>x.id===id);if(!c)return;
+  const link=`${SISTEMA_URL}?token=${c.token}`;
+  const msg=`Olá ${c.nome.split(' ')[0]}! ✅\n\nPagamento confirmado! O teu acesso ao *Sistema do Dono* está activo:\n\n🔗 ${link}\n\n📋 *Plano:* ${planLabel(c.plan)} — válido até ${c.end}\n\nGuarda este link — é o teu acesso pessoal. Qualquer questão estou aqui! 🚀`;
+  window.open(`https://wa.me/${c.tel.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+function quickMsg(id){sendAccessLink(id);}
+
+function quickRenewMsg(id){
+  const c=DB.clients.find(x=>x.id===id);if(!c)return;
+  const msg=`Olá ${c.nome.split(' ')[0]}! 👋\n\nO teu acesso ao *Sistema do Dono* expira em *${daysLeft(c.end)} dias* (${c.end}).\n\nPara renovar e garantir que não perdes os teus dados:\n\n📋 *Trimestral:* 9.900 Kz (90 dias)\n📋 *Anual:* 22.000 Kz (365 dias)\n\nResponde aqui e envio a referência de pagamento! 🙏`;
+  window.open(`https://wa.me/${c.tel.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+// ══════════════════════════════════════
+// APAGAR
+// ══════════════════════════════════════
+function openDelete(id){
+  currentClientId=id;
+  const c=DB.clients.find(x=>x.id===id);
+  document.getElementById('modal-delete-body').innerHTML=`Apagar <strong>${c.nome}</strong>? Esta acção não pode ser desfeita.<br><br><em style="color:var(--txt3);font-size:12px;">Os dados do cliente no browser dele ficam intactos — só o registo admin é apagado.</em>`;
+  document.getElementById('modal-delete').classList.add('open');
+}
+
+function confirmDelete(){
+  DB.clients=DB.clients.filter(c=>c.id!==currentClientId);
+  saveDB();
+  document.getElementById('modal-delete').classList.remove('open');
+  renderClients();updateTopStats();
+  toast('Registo apagado');
+}
+
+// ══════════════════════════════════════
+// REFERÊNCIAS PENDENTES
+// ══════════════════════════════════════
+function renderRefs(){
+  const pending=DB.clients.filter(c=>c.status==='pending');
+  document.getElementById('refs-list').innerHTML=pending.length?pending.map(c=>`
+    <div class="ref-card">
+      <div class="rc-top">
+        <div>
+          <div class="rc-name">${c.nome}</div>
+          <div style="font-size:12px;color:var(--txt3);">${c.empresa||''} · ${c.tel}</div>
+        </div>
+        <div class="rc-plan">${planLabel(c.plan)} · ${fmt(c.valor)} Kz</div>
+      </div>
+      <div class="rc-refs">
+        <div class="rc-ref-item"><div class="rri-l">Entidade</div><div class="rri-v">${ENTIDADE_MC}</div></div>
+        <div class="rc-ref-item"><div class="rri-l">Referência</div><div class="rri-v">${c.ref}</div></div>
+        <div class="rc-ref-item"><div class="rri-l">Valor</div><div class="rri-v">${fmt(c.valor)} Kz</div></div>
+      </div>
+      <div class="rc-actions">
+        <button class="btn btn-green" style="font-size:12px;" onclick="openConfirmPaid('${c.id}')">✓ Confirmar pagamento</button>
+        <button class="btn btn-ghost" style="font-size:12px;" onclick="sendRefWA('${c.id}')">📱 Reenviar referência</button>
+        <button class="btn btn-red" style="font-size:12px;" onclick="openDelete('${c.id}')">✕ Cancelar</button>
+      </div>
+    </div>`).join(''):'<div style="color:var(--txt3);padding:40px;text-align:center;font-family:\'Fira Code\',monospace;font-size:11px;letter-spacing:1px;">NENHUMA REFERÊNCIA PENDENTE</div>';
+}
+
+function sendRefWA(id){
+  const c=DB.clients.find(x=>x.id===id);if(!c)return;
+  const msg=`Olá ${c.nome.split(' ')[0]}! 👋\n\nAqui ficam os dados de pagamento do teu acesso ao *Sistema do Dono*:\n\n🏦 *Entidade:* ${ENTIDADE_MC}\n🔢 *Referência:* ${c.ref}\n💰 *Valor:* ${fmt(c.valor)} Kz\n📋 *Plano:* ${planLabel(c.plan)}\n\nApós confirmação envio o link de acesso! 🙏`;
+  window.open(`https://wa.me/${c.tel.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+// ══════════════════════════════════════
+// RENOVAR
+// ══════════════════════════════════════
+function renderRenovar(){
+  const sel=document.getElementById('r-cliente');
+  sel.innerHTML='<option value="">-- Seleccionar cliente --</option>'+
+    DB.clients.filter(c=>c.status!=='pending').map(c=>`<option value="${c.id}">${c.nome} (${planLabel(c.plan)} · expira ${c.end})</option>`).join('');
+  document.getElementById('r-inicio').value=today();
+}
+
+function loadClientData(){
+  const id=document.getElementById('r-cliente').value;
+  const info=document.getElementById('r-client-info');
+  if(!id){info.style.display='none';return;}
+  const c=DB.clients.find(x=>x.id===id);
+  info.style.display='block';
+  const d=daysLeft(c.end);
+  document.getElementById('r-info-txt').innerHTML=`<strong>${c.nome}</strong> · ${c.empresa||'—'} · ${c.tel}<br>Plano actual: ${planLabel(c.plan)} · Expira: ${c.end} <span style="color:${d<=0?'var(--r2)':d<=7?'var(--y2)':'var(--g2)'}">(${d<=0?'expirado':d+' dias restantes'})</span>`;
+}
+
+function generateRenewal(){
+  const id=document.getElementById('r-cliente').value;
+  const plano=document.getElementById('r-plano').value;
+  const inicio=document.getElementById('r-inicio').value||today();
+  if(!id){toast('Selecciona um cliente',true);return;}
+  const c=DB.clients.find(x=>x.id===id);
+  const newToken=generateToken(c.id,plano,inicio);
+  const newEnd=addDays(inicio,+plano);
+  // Actualizar cliente
+  const idx=DB.clients.findIndex(x=>x.id===id);
+  DB.clients[idx].plan=+plano;DB.clients[idx].start=inicio;
+  DB.clients[idx].end=newEnd;DB.clients[idx].token=newToken;
+  DB.clients[idx].status='pending';DB.clients[idx].valor=planValue(plano);
+  DB.clients[idx].ref=generateRef(c.id+inicio);
+  DB.activity.unshift({date:today(),client:c.nome,action:'Renovação gerada',plan:planLabel(plano),valor:planValue(plano)});
+  saveDB();
+  rLinkData={c:DB.clients[idx],link:`${SISTEMA_URL}?token=${newToken}`};
+  document.getElementById('r-lr-link').textContent=rLinkData.link;
+  document.getElementById('r-link-result').classList.add('show');
+  updateTopStats();toast('Renovação gerada ✓');
+}
+
+function copyRLink(){
+  if(!rLinkData)return;
+  navigator.clipboard.writeText(rLinkData.link).then(()=>toast('Link copiado ✓')).catch(()=>toast('Copia manualmente',true));
+}
+
+function sendRenewalWA(){
+  if(!rLinkData)return;
+  const c=rLinkData.c;
+  const msg=`Olá ${c.nome.split(' ')[0]}! 🎉\n\nO teu acesso ao *Sistema do Dono* foi renovado!\n\n🔗 ${rLinkData.link}\n\n📋 *Plano:* ${planLabel(c.plan)} — válido até ${c.end}\n\nTodos os teus dados estão intactos. Bom trabalho! 🚀`;
+  window.open(`https://wa.me/${c.tel.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+// ══════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════
+function boot(){
+  loadDB();
+  // Set data de hoje no form
+  document.getElementById('n-inicio').value=today();
+  renderDashboard();
+  updateTopStats();
+}
+
+// Verificar auth ao abrir
+if(sessionStorage.getItem('admin_auth')==='1'){
+  document.getElementById('login-screen').classList.add('hidden');
+  boot();
+}
+
+// Fechar modais
+document.getElementById('modal-paid').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
+document.getElementById('modal-delete').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('open'));}});
+
+// Preview dinâmico
+function updatePreview(){
+  const p=document.getElementById('n-plano').value;
+}
+</script>
+</body>
+</html>
