@@ -337,7 +337,7 @@ app.get('/health', (req, res) => {
 
 // ── ROTA PRINCIPAL ──
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'diagnostico-do-dono.html'));
+  res.sendFile(path.join(__dirname, 'diagnostico-do-dono.html'));
 });
 
 // ── START ──
